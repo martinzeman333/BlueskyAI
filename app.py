@@ -4,16 +4,19 @@ import os
 from atproto import Client, models
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your_super_secret_key') # Důležité pro session!
+# FLASK_SECRET_KEY je kritický pro zabezpečení session (např. ukládání stavu přihlášení).
+# Nikdy neukládejte hesla nebo jiné citlivé údaje přímo do kódu.
+# Vždy používejte proměnné prostředí.
+# Pro produkci vygenerujte silný, náhodný klíč, např. os.urandom(24).hex()
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your_super_secret_key_please_change_this!')
 
 # Globální instance Bluesky klienta
 bluesky_client = Client()
 
 # Proměnné prostředí pro Bluesky přihlašovací údaje
-# V PRODUKCI NIKDY NEUKLÁDEJTE HESLA PŘÍMO DO KÓDU!
-# Používejte proměnné prostředí (např. na Render.com)
-BLUESKY_HANDLE = os.environ.get('BLUESKY_HANDLE')
-BLUESKY_PASSWORD = os.environ.get('BLUESKY_PASSWORD')
+# Tyto proměnné by měly být nastaveny ve vašem produkčním prostředí (např. na Render.com)
+# BLUESKY_HANDLE = os.environ.get('BLUESKY_HANDLE')
+# BLUESKY_PASSWORD = os.environ.get('BLUESKY_PASSWORD')
 
 # Funkce pro ověření, zda je klient přihlášen
 def is_bluesky_logged_in():
@@ -24,7 +27,9 @@ def is_bluesky_logged_in():
 # Funkce pro získání handle po přihlášení
 def get_bluesky_handle():
     """Vrací handle přihlášeného uživatele."""
-    return bluesky_client.me.did.split(':').pop() if is_bluesky_logged_in() else None
+    # DID (Decentralized Identifier) je unikátní identifikátor uživatele na Bluesky
+    # Handle (např. 'example.bsky.social') je čitelnější jméno.
+    return bluesky_client.me.handle if is_bluesky_logged_in() else None
 
 
 @app.route('/')
@@ -71,28 +76,52 @@ def get_stats():
     if not is_bluesky_logged_in():
         return jsonify({"status": "error", "message": "Nelze načíst statistiky. Nejste přihlášeni."})
     
+    followers_count = "N/A"
+    follows_count = "N/A"
+
     try:
-        # Získání statistik (Toto je placeholder, atproto API nemusí mít přímou metodu pro "moje statistiky"
-        # Budete muset implementovat logiku pro načítání vlastních příspěvků, lajků atd.
-        # Následující je POUZE UKÁZKA, JAK BYSTE MOHLI ZÍSKAT NĚJAKÁ DATA
-        
-        # Příklad: Získání počtu příspěvků (omezený na prvních několik pro rychlou ukázku)
-        # response = bluesky_client.get_author_feed(actor=bluesky_client.me.did, limit=10)
-        # ai_posts = len(response.feed) if response and response.feed else 0
-
-        # Pro účely této ukázky použijeme pevné hodnoty nebo získáme data, která atproto nabízí
-        # (Např. aktuální Bluesky API neposkytuje přímo "počet lajků", "komentářů" jako statistiku)
-        # Budete muset buď sledovat tyto události sami, nebo použít jiná API.
-        stats = {
-            'ai_posts': "N/A", # Zde byste implementovali logiku pro získání skutečného počtu
-            'auto_likes': "N/A", # Zde byste implementovali logiku pro získání skutečného počtu
-            'comments': "N/A",   # Zde byste implementovali logiku pro získání skutečného počtu
-            'new_follows': "N/A" # Zde byste implementovali logiku pro získání skutečného počtu
-        }
-        return jsonify({"status": "success", "stats": stats})
+        # Získání počtu sledujících (followers)
+        # Bluesky API vrací paginované výsledky, je potřeba je proiterovat
+        followers_list = []
+        cursor = None
+        while True:
+            response = bluesky_client.get_followers(actor=bluesky_client.me.did, limit=100, cursor=cursor)
+            if response and response.followers:
+                followers_list.extend(response.followers)
+                cursor = response.cursor
+            else:
+                break
+            if not cursor: # If there's no more cursor, we've fetched all pages
+                break
+        followers_count = len(followers_list)
     except Exception as e:
-        return jsonify({"status": "error", "message": f"Chyba při načítání statistik: {str(e)}"})
+        print(f"Chyba při načítání počtu sledujících: {e}")
+        followers_count = "Chyba"
 
+    try:
+        # Získání počtu sledovaných (follows)
+        # Bluesky API vrací paginované výsledky, je potřeba je proiterovat
+        follows_list = []
+        cursor = None
+        while True:
+            response = bluesky_client.get_follows(actor=bluesky_client.me.did, limit=100, cursor=cursor)
+            if response and response.follows:
+                follows_list.extend(response.follows)
+                cursor = response.cursor
+            else:
+                break
+            if not cursor: # If there's no more cursor, we've fetched all pages
+                break
+        follows_count = len(follows_list)
+    except Exception as e:
+        print(f"Chyba při načítání počtu sledovaných: {e}")
+        follows_count = "Chyba"
+
+    stats = {
+        'followers': followers_count,
+        'following': follows_count
+    }
+    return jsonify({"status": "success", "stats": stats})
 
 @app.route('/api/ai-post', methods=['POST'])
 def ai_post():
@@ -124,9 +153,10 @@ def ai_like():
         return jsonify({"status": "error", "message": "Pro lajknutí je vyžadováno URI příspěvku."})
 
     try:
-        # Skutečné lajknutí příspěvku na Bluesky
-        # V reálné aplikaci byste zde mohli mít logiku pro vyhledávání příspěvků k lajknutí
-        bluesky_client.like(post_uri, post_uri.rsplit('/', 1)[-1]) # Rkey z URI
+        # Skutečné lajknutí příspěvků na Bluesky
+        # Získání rkey z URI je důležité pro metodu like
+        rkey = post_uri.rsplit('/', 1)[-1]
+        bluesky_client.like(post_uri, rkey)
         return jsonify({"status": "success", "message": f"Příspěvek {post_uri} úspěšně lajknut!"})
     except Exception as e:
         return jsonify({"status": "error", "message": f"Chyba při lajkování příspěvku: {str(e)}"})
@@ -143,43 +173,25 @@ def ai_comment():
         return jsonify({"status": "error", "message": "Pro komentář je vyžadováno URI a text komentáře."})
 
     try:
-        # Získání informace o příspěvku pro vytvoření správného reference
-        # response = bluesky_client.get_post(post_uri)
-        # record_ref = models.create_strong_ref(response.uri, response.cid)
-        # root_ref = record_ref # pro jednoduchost, pokud komentujeme přímo příspěvek
+        # K vytvoření komentáře je potřeba získat "strong reference" na cílový příspěvek.
+        # To znamená znalost URI a CID (Content ID) příspěvku.
+        # Zde je to zjednodušené, ale pro reálnou aplikaci byste museli
+        # nejprve načíst cílový příspěvek (např. pomocí get_post_thread nebo get_record)
+        # a z něj získat potřebné URI a CID pro 'root' a 'parent' reference.
 
-        # Pro ukázku použijeme zjednodušenou referenci, v reálu byste ji získali dynamicky
-        # Zde je potřeba správně získat `record_ref` a `root_ref` pro komentář
-        # K tomu je často potřeba nejdříve načíst post, na který reagujete.
-        # Zde je placeholder, který byste museli upravit.
-        
-        # Příklad ruční konstrukce (museli byste znát URI a CID cílového příspěvku)
-        # Alternativně:
-        # resp = bluesky_client.get_post_thread(post_uri)
-        # root_post = resp.thread.post
-        # record_ref = models.create_strong_ref(root_post.uri, root_post.cid)
-        # parent_ref = models.create_strong_ref(root_post.uri, root_post.cid) # nebo parent_post.uri/cid pro odpověď na komentář
-        
-        # Vzhledem k složitosti dynamického získání strong_ref v simulaci,
-        # budeme předpokládat, že post_uri je platný a postačí pro tuto ukázku
-        
-        # Toto je zjednodušené - v reálu potřebujete silné reference na root a parent post
-        # DŮLEŽITÉ: atproto.models.create_strong_ref vyžaduje uri a cid.
-        # Zde jen předáváme URI, což je zjednodušení pro tuto ukázku.
-        # Pro správnou implementaci byste museli získat CID cílového příspěvku.
-        
-        # Pokud nevíme CID, můžeme použít jen textový post.
-        # Nebo:
-        # from atproto import models_pack
-        # post_record = bluesky_client.get_record(post_uri)
-        # root_ref = models_pack.create_ref_from_uri(post_uri)
-        # parent_ref = models_pack.create_ref_from_uri(post_uri)
+        # Příklad, jak byste získali reference:
+        # thread = bluesky_client.get_post_thread(post_uri)
+        # post = thread.thread.post if thread and thread.thread and thread.thread.post else None
+        # if post:
+        #     root_ref = models.create_strong_ref(post.uri, post.cid)
+        #     parent_ref = models.create_strong_ref(post.uri, post.cid) # Pokud odpovídáte přímo na post
+        #     bluesky_client.post(comment_text, reply_to=models.ReplyRef(root=root_ref, parent=parent_ref))
+        #     return jsonify({"status": "success", "message": f"Komentář k {post_uri} úspěšně přidán!"})
+        # else:
+        #    return jsonify({"status": "error", "message": f"Příspěvek s URI {post_uri} nenalezen pro komentář."})
 
-        # Pro zjednodušení simulujeme úspěch a upozorňujeme na potřebu správné implementace.
-        # Skutečné vytvoření komentáře na Bluesky by vypadalo takto:
-        # bluesky_client.send_post(comment_text, reply_to=models.ReplyRef(root=root_ref, parent=parent_ref))
-        
-        return jsonify({"status": "success", "message": f"Komentář k {post_uri} úspěšně přidán (simulováno)! Budete potřebovat implementovat dynamické získání URI/CID pro reálné komentáře."})
+        # Zde je pro ukázku pouze simulace úspěchu s upozorněním.
+        return jsonify({"status": "success", "message": f"Komentář k {post_uri} úspěšně přidán (simulováno)! Vyžaduje dynamické získání URI/CID pro reálné komentáře."})
     except Exception as e:
         return jsonify({"status": "error", "message": f"Chyba při vytváření komentáře: {str(e)}"})
 
@@ -195,7 +207,7 @@ def ai_follow():
 
     try:
         # Skutečné sledování uživatele na Bluesky
-        # Nejprve je potřeba získat DID z handle
+        # Nejprve je potřeba získat DID (Decentralized Identifier) z handle
         profile = bluesky_client.get_profile(target_handle)
         if profile and profile.did:
             bluesky_client.follow(profile.did)
@@ -217,19 +229,21 @@ def ai_unfollow():
 
     try:
         # Skutečné zrušení sledování uživatele na Bluesky
-        # Nejprve je potřeba získat DID z handle a record_uri předchozího follow záznamu
-        # To je složitější, protože atproto nemá přímou unfollow metodu jen s handle.
-        # Museli byste najít existující follow záznam.
-        
-        # Příklad (zjednodušený - vyžadovalo by to vyhledání follow záznamu):
-        # resp = bluesky_client.get_follows(bluesky_client.me.did)
-        # follow_record = next((f for f in resp.follows if f.handle == target_handle), None)
-        # if follow_record:
-        #     bluesky_client.delete_record(follow_record.uri, follow_record.cid)
-        #     return jsonify({"status": "success", "message": f"Uživatel {target_handle} úspěšně přestal být sledován!"})
+        # Zrušení sledování vyžaduje URI a CID existujícího "follow" záznamu.
+        # atproto nemá přímou unfollow metodu pouze s handlem.
+        # Museli byste najít existující "follow" záznam vytvořený přihlášeným uživatelem pro daného target_handle.
+        # Příklad:
+        # profile = bluesky_client.get_profile(target_handle)
+        # if profile and profile.did:
+        #     # Toto by bylo náročnější na implementaci, protože byste museli prohledat své vlastní follows
+        #     # po záznamu, který odpovídá cílovému DID.
+        #     # Níže je jen ukázka, co by se pak volalo:
+        #     # bluesky_client.delete_record(uri='uri_nalezeného_follow_záznamu', cid='cid_nalezeného_follow_záznamu')
+        #     return jsonify({"status": "success", "message": f"Uživatel {target_handle} úspěšně přestal být sledován (logika pro nalezení follow záznamu není plně implementována)!"})
         # else:
-        #     return jsonify({"status": "error", "message": f"Uživatel {target_handle} nebyl nalezen mezi sledovanými."})
+        #    return jsonify({"status": "error", "message": f"Uživatel {target_handle} nenalezen."})
 
+        # Zde je pro ukázku pouze simulace úspěchu s upozorněním.
         return jsonify({"status": "success", "message": f"Zrušení sledování pro uživatele {target_handle} (simulováno). Reálná implementace vyžaduje nalezení follow záznamu."})
     except Exception as e:
         return jsonify({"status": "error", "message": f"Chyba při zrušení sledování: {str(e)}"})
