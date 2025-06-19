@@ -4,7 +4,11 @@ from collections import deque
 import random # Importujeme pro randomizaci zpoždění
 from flask import Flask, render_template, request, jsonify, session
 import os
+import atproto # Importujeme modul atproto pro zjištění verze
 from atproto import Client, models
+
+# Debugging: Vypíše verzi atproto knihovny při startu aplikace
+print(f"DEBUG: Načtená verze atproto: {atproto.__version__}")
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your_super_secret_key_please_change_this!')
@@ -337,10 +341,9 @@ def search_follow_sources():
         return jsonify({"status": "error", "message": "Je potřeba zadat klíčové slovo pro vyhledávání."})
 
     try:
-        # Vyhledáme aktéry (uživatele) podle klíčového slova
-        # limit je max 25, zkusíme 2 dotazy pro 50, nebo jen ten limit
-        # Max limit pro search_actors je 25, takže pro 50 potřebujeme více volání nebo jinou strategii.
-        # Pro zjednodušení a demonstraci použijeme limit 25 a zkusíme získat co nejvíce.
+        # PŘEPRAVENO: Používáme správnou metodu pro vyhledávání aktérů
+        # Bluesky API má limit 25 pro search_actors. Pro získání více je potřeba použít cursor a iterovat.
+        # Pro demonstraci budeme prozatím používat jeden dotaz s limitem 25.
         search_results = bluesky_client.bsky.actor.search_actors(q=keyword, limit=25)
         
         potential_users = []
@@ -361,11 +364,18 @@ def search_follow_sources():
                     continue
         
         # Seřadíme uživatele podle počtu sledujících sestupně
-        potential_users_sorted = sorted(potential_users, key=lambda x: x['followers_count'], reverse=True)
+        # Upozornění: Funkce sortování předpokládá, že 'followers_count' je číslo.
+        # Pokud by se nepodařilo získat, může být "N/A" což by způsobilo chybu.
+        # Zajistíme, aby byly nulové nebo nenumerické hodnoty na konci.
+        potential_users_sorted = sorted(
+            potential_users, 
+            key=lambda x: x['followers_count'] if isinstance(x['followers_count'], int) else -1, # -1 pro N/A
+            reverse=True
+        )
         
         return jsonify({
             "status": "success",
-            "users": potential_users_sorted[:50] # Vrátíme jen prvních 50
+            "users": potential_users_sorted[:50] # Vrátíme jen prvních 50 (i když z jednoho dotazu máme max 25)
         })
 
     except Exception as e:
@@ -404,12 +414,13 @@ def add_followers_to_queue():
         
         with ai_follow_lock:
             for follower_item in followers_list:
-                if follower_item.did not in processed_dids and follower_item.did != bluesky_client.me.did: # Vyhnout se sledování sebe sama
+                # Vyhnout se sledování sebe sama a uživatelů, které již sledujeme/zpracovali jsme
+                if follower_item.did != bluesky_client.me.did and follower_item.did not in processed_dids: 
                     ai_follow_queue.append(follower_item.did)
                     processed_dids.add(follower_item.did) # Označit jako "viděný"
                     followers_added_count += 1
             
-            current_ai_follow_activity = f"Přidáno {followers_added_count} sledujících z {target_user_did}. Fronta: {len(ai_follow_queue)}"
+            current_ai_follow_activity = f"Přidáno {followers_added_count} sledujících z {target_user_did}. Celkem ve frontě: {len(ai_follow_queue)}"
 
         return jsonify({
             "status": "success",
@@ -459,7 +470,6 @@ def _run_ai_follow_task():
                     continue 
                 
                 with ai_follow_lock:
-                    # Pokusíme se získat handle pro lepší zprávu o aktivitě
                     target_handle_for_log = target_did 
                     try:
                         profile_temp = bluesky_client.get_profile(target_did)
@@ -493,6 +503,3 @@ def _run_ai_follow_task():
                 current_ai_follow_activity = "Fronta pro sledování je prázdná. Čekám na nové uživatele..."
             print("AI Follow Thread: Fronta prázdná, čekám na nové uživatele.")
             time.sleep(5) # Spíme kratší dobu, pokud je fronta prázdná, aby se rychleji reagovalo na nové položky
-            
-        # Dlouhá pauza již není potřeba, protože logika plnění fronty je oddělena
-        # a zpracování fronty jen čeká, pokud je prázdná.
