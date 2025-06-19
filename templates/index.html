@@ -87,6 +87,9 @@
         </div>
     </main>
     
+    <!-- Nový element pro zobrazení aktivity AI Follow na hlavní stránce -->
+    <p id="aiFollowMainPageActivity" class="activity-message">Stav AI Sledování: Nespustěno</p>
+
     <section class="search-section">
         <div class="search-container">
             <input type="text" class="search-input" placeholder="Hledat funkce, nastavení...">
@@ -173,13 +176,19 @@
 </div>
 
 <script>
+// Globální proměnná pro ID intervalu pollingu aktivity
+let activityPollingIntervalId;
+
+// Vypíše zprávu do konzole při startu skriptu pro diagnostiku
+console.log('Script parsing started'); 
+
 document.addEventListener('DOMContentLoaded', (event) => {
     // Načte statistiky při načtení stránky, pokud je uživatel přihlášen
     const isLoggedIn = {{ 'true' if is_logged_in else 'false' }};
     if (isLoggedIn) {
         fetchStats();
-        // Načíst stav AI Follow při načtení stránky
-        getAIFollowStatus(); // Přidáno pro načtení stavu AI Follow
+        // Načíst stav AI Follow při načtení stránky a spustit polling aktivity
+        getAIFollowStatusAndStartPolling(); 
     }
 });
 
@@ -191,8 +200,8 @@ async function loginToBluesky() {
     const logoutForm = document.getElementById('logoutForm');
 
     // Vylepšené očištění handle od bílých znaků a potenciálních neviditelných Unicode znaků
-    // Regex \u200B (Zero Width Space), \u202A-\u202E (Embedding/Override), \u2060-\u206F (Invisible Operators)
-    // a další běžné mezery a kontrolní znaky.
+    // Regex \u2000-\u200F (General Punctuation), \u2028-\u202F (Line/Paragraph Separators & Formatting Characters),
+    // \u205F (Medium Mathematical Space), \uFEFF (Byte Order Mark)
     const handle = handleInput.value.trim().replace(/[\u2000-\u200F\u2028-\u202F\u205F\uFEFF]/g, "");
     const password = passwordInput.value;
 
@@ -215,7 +224,7 @@ async function loginToBluesky() {
             authForm.style.display = 'none';
             logoutForm.style.display = 'flex';
             fetchStats(); // Načíst statistiky po úspěšném přihlášení
-            getAIFollowStatus(); // Načíst stav AI Follow po přihlášení
+            getAIFollowStatusAndStartPolling(); // Načíst stav AI Follow a spustit polling po přihlášení
         } else {
             showNotification(data.message, 'error');
         }
@@ -232,6 +241,9 @@ async function logoutFromBluesky() {
     const handleInput = document.getElementById('blueskyHandle');
     const passwordInput = document.getElementById('blueskyPassword');
 
+    // Zastavit polling aktivity při odhlášení
+    stopActivityPolling();
+
     try {
         const response = await fetch('/api/bluesky-logout', { method: 'POST' });
         const data = await response.json();
@@ -245,7 +257,9 @@ async function logoutFromBluesky() {
             passwordInput.value = ''; // Vymazat formulář
             // Reset statistik na N/A po odhlášení
             updateStats({ followers: 'N/A', following: 'N/A' }); 
-            updateAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A' }); // Reset AI Follow status
+            updateAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A' }); // Reset AI Follow status v modalu
+            document.getElementById('aiFollowMainPageActivity').textContent = 'Stav AI Sledování: Nespustěno'; // Reset na hlavní stránce
+            document.getElementById('aiFollowMainPageActivity').style.color = 'inherit'; // Reset barvy
         } else {
             showNotification(data.message, 'error');
         }
@@ -293,25 +307,68 @@ function closeModal(id) {
 // Funkce specifická pro otevření nastavení AI Follow
 function openFollowSettingsModal() { 
     openModal('aiFollowSettingsModal'); 
-    getAIFollowStatus(); // Načíst aktuální stav při otevření modalu
+    getAIFollowStatusAndStartPolling(); // Načíst aktuální stav při otevření modalu
 }
 
-async function getAIFollowStatus() {
+// Spustí/zastaví polling aktivity podle stavu AI Follow
+async function getAIFollowStatusAndStartPolling() {
     try {
         const response = await fetch('/api/ai-follow-status');
         const data = await response.json();
         if (data.status === 'success') {
-            updateAIFollowStatus(data);
+            updateAIFollowStatus(data); // Aktualizuje status v modalu
+            updateMainPageAIFollowStatus(data); // Aktualizuje status na hlavní stránce
+
+            if (data.running) {
+                if (!activityPollingIntervalId) { // Zabrání vícenásobnému spuštění intervalu
+                    activityPollingIntervalId = setInterval(getAIFollowActivity, 5000); // Pollovat každých 5 sekund
+                }
+            } else {
+                stopActivityPolling();
+            }
         } else {
             console.warn("Nelze načíst stav AI Follow: ", data.message);
-            updateAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A' }); // Reset status
+            updateAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A', queue_size: 0 });
+            updateMainPageAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A', queue_size: 0 });
+            stopActivityPolling();
         }
     } catch (error) {
         console.error('Chyba při načítání stavu AI Follow:', error);
-        updateAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A' }); // Reset status
+        updateAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A', queue_size: 0 });
+        updateMainPageAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A', queue_size: 0 });
+        stopActivityPolling();
     }
 }
 
+// Získá zprávu o aktivitě a aktualizuje ji na hlavní stránce
+async function getAIFollowActivity() {
+    try {
+        const response = await fetch('/api/ai-follow-activity');
+        const data = await response.json();
+        if (data.status === 'success') {
+            document.getElementById('aiFollowMainPageActivity').textContent = `Stav AI Sledování: ${data.message}`;
+            // Optional: update color based on message content if needed
+            if (data.message.includes("Spuštěno") || data.message.includes("Sleduji")) {
+                document.getElementById('aiFollowMainPageActivity').style.color = '#22C55E';
+            } else if (data.message.includes("Zastaveno") || data.message.includes("Nespustěno")) {
+                document.getElementById('aiFollowMainPageActivity').style.color = '#EF4444';
+            } else {
+                 document.getElementById('aiFollowMainPageActivity').style.color = 'inherit';
+            }
+
+        } else {
+            console.warn("Nelze načíst zprávu o aktivitě AI Follow: ", data.message);
+            document.getElementById('aiFollowMainPageActivity').textContent = 'Stav AI Sledování: Nelze načíst aktivitu.';
+            document.getElementById('aiFollowMainPageActivity').style.color = '#EF4444';
+        }
+    } catch (error) {
+        console.error('Chyba při načítání zprávy o aktivitě AI Follow:', error);
+        document.getElementById('aiFollowMainPageActivity').textContent = 'Stav AI Sledování: Chyba při komunikaci.';
+        document.getElementById('aiFollowMainPageActivity').style.color = '#EF4444';
+    }
+}
+
+// Aktualizuje status v modálním okně nastavení
 function updateAIFollowStatus(statusData) {
     const statusMessageElement = document.getElementById('aiFollowStatusMessage');
     if (statusData.running) {
@@ -320,6 +377,26 @@ function updateAIFollowStatus(statusData) {
     } else {
         statusMessageElement.textContent = `Stav: Nespustěno`;
         statusMessageElement.style.color = '#EF4444'; // Červená
+    }
+}
+
+// Aktualizuje status na hlavní stránce
+function updateMainPageAIFollowStatus(statusData) {
+    const mainPageActivityElement = document.getElementById('aiFollowMainPageActivity');
+    if (statusData.running) {
+        mainPageActivityElement.textContent = `Běží proces AI Follow: Spuštěno s klíčovým slovem "${statusData.keyword || 'N/A'}"`;
+        mainPageActivityElement.style.color = '#22C55E';
+    } else {
+        mainPageActivityElement.textContent = 'Stav AI Sledování: Nespustěno';
+        mainPageActivityElement.style.color = '#EF4444';
+    }
+}
+
+// Zastaví polling interval
+function stopActivityPolling() {
+    if (activityPollingIntervalId) {
+        clearInterval(activityPollingIntervalId);
+        activityPollingIntervalId = null;
     }
 }
 
@@ -341,8 +418,7 @@ async function startAIFollow() {
         const data = await response.json();
         showNotification(data.message, data.status);
         if (data.status === 'success') {
-            getAIFollowStatus(); // Aktualizovat stav po spuštění
-            //closeModal('aiFollowSettingsModal'); // Modal nebudeme zavírat hned, aby uživatel viděl stav
+            getAIFollowStatusAndStartPolling(); // Aktualizovat stav a spustit polling po spuštění
         }
     } catch (error) {
         console.error('Error starting AI Follow:', error);
@@ -359,8 +435,7 @@ async function stopAIFollow() {
         const data = await response.json();
         showNotification(data.message, data.status);
         if (data.status === 'success') {
-            getAIFollowStatus(); // Aktualizovat stav po zastavení
-            //closeModal('aiFollowSettingsModal'); // Modal nebudeme zavírat hned
+            getAIFollowStatusAndStartPolling(); // Aktualizovat stav a zastavit polling po zastavení
         }
     } catch (error) {
         console.error('Error stopping AI Follow:', error);
