@@ -4,11 +4,11 @@ from collections import deque
 import random # Importujeme pro randomizaci zpoždění
 from flask import Flask, render_template, request, jsonify, session
 import os
-import atproto # Importujeme modul atproto pro zjištění verze
+# import atproto # Již nepotřebujeme pro zjištění verze
 from atproto import Client, models
 
-# Debugging: Vypíše verzi atproto knihovny při startu aplikace
-print(f"DEBUG: Načtená verze atproto: {atproto.__version__}")
+# Odstraněn debugging: Vypisování verze atproto. Způsobovalo AttributeError.
+# print(f"DEBUG: Načtená verze atproto: {atproto.__version__}")
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your_super_secret_key_please_change_this!')
