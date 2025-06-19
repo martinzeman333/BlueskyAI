@@ -411,7 +411,8 @@ def _run_ai_follow_task():
             print(f"AI Follow Thread: Fronta prázdná nebo čas na hledání nového vhodného uživatele pro followery. Hledám '{ai_follow_keyword}'...")
             
             try:
-                search_actors_response = bluesky_client.search_actors(q=ai_follow_keyword, limit=20) 
+                # PŘEPRAVENO: Používáme správnou metodu pro vyhledávání aktérů
+                search_actors_response = bluesky_client.bsky.actor.search_actors(q=ai_follow_keyword, limit=20) 
                 
                 if search_actors_response and search_actors_response.actors:
                     print(f"(DEBUG) search_actors našel {len(search_actors_response.actors)} aktérů.")
