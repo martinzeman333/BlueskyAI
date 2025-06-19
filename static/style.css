@@ -1,4 +1,4 @@
-/* Modern Web App Design */
+/* Moderní webový design */
 * {
     margin: 0;
     padding: 0;
@@ -6,22 +6,26 @@
 }
 
 body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    /* Upravený gradient pro minimalistický vzhled */
+    background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     min-height: 100vh;
     color: #ffffff;
     overflow-x: hidden;
 }
 
-/* Main Container */
+/* Hlavní kontejner */
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 40px 20px;
     min-height: 100vh;
+    display: flex; /* Použijeme flexbox pro centrování obsahu */
+    flex-direction: column;
+    justify-content: center; /* Vertikální centrování */
 }
 
-/* Header - Zde se styluje nadpis "Bluesky AI Manager" */
+/* Hlavička */
 .header {
     text-align: center;
     margin-bottom: 60px;
@@ -35,16 +39,17 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    letter-spacing: -1px; /* Pro více elegantní vzhled */
 }
 
 .header p {
     font-size: 1.2rem;
-    opacity: 0.9;
+    opacity: 0.8; /* Mírně snížená průhlednost */
     max-width: 600px;
     margin: 0 auto;
 }
 
-/* Search Section - Styluje pole vyhledávání a jeho ikonu */
+/* Sekce vyhledávání */
 .search-section {
     margin-bottom: 60px;
     display: flex;
@@ -59,26 +64,26 @@ body {
 
 .search-input {
     width: 100%;
-    padding: 20px 24px 20px 60px;
-    font-size: 1.1rem;
+    padding: 18px 24px 18px 60px; /* Upravené polstrování */
+    font-size: 1.05rem;
     border: none;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
+    border-radius: 12px; /* Mírně menší zaoblení */
+    background: rgba(255, 255, 255, 0.1); /* Mírně průhlednější */
+    backdrop-filter: blur(15px); /* Menší blur */
     color: #ffffff;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Jemnější ohraničení */
 }
 
 .search-input::placeholder {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.6); /* Jemnější placeholder text */
 }
 
 .search-input:focus {
     outline: none;
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); /* Jemnější stín */
 }
 
 .search-icon {
@@ -88,135 +93,123 @@ body {
     transform: translateY(-50%);
     width: 24px;
     height: 24px;
-    fill: rgba(255, 255, 255, 0.7);
+    fill: rgba(255, 255, 255, 0.6); /* Jemnější barva ikony */
 }
 
-/* Cards Grid - Rozložení pro tlačítka AI funkcí */
+/* Mřížka karet */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Mírně upravená velikost karet */
+    gap: 20px; /* Menší mezery */
     margin-bottom: 40px;
 }
 
-/* Action Cards - Styl pro všechna AI tlačítka (AI Post, AI Like, AI Comment, AI Follow, AI Unfollow) */
+/* Akční karty */
 .action-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 32px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.08); /* Jemnější pozadí */
+    backdrop-filter: blur(15px); /* Menší blur */
+    border-radius: 16px; /* Mírně menší zaoblení */
+    padding: 28px; /* Upravené polstrování */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Jemnější ohraničení */
+    transition: all 0.2s ease-out; /* Rychlejší a jemnější animace */
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    display: flex; /* Pro lepší uspořádání obsahu karty */
+    flex-direction: column;
+    align-items: flex-start; /* Zarovnání ikon a textu vlevo */
 }
 
-.action-card::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-    transform: rotate(45deg);
-    transition: all 0.6s ease;
-    opacity: 0;
-}
-
-.action-card:hover::before {
-    opacity: 1;
-    transform: rotate(45deg) translate(50%, 50%);
-}
-
+/* Odebrán pseudoelement ::before pro jednodušší hover efekt */
 .action-card:hover {
-    transform: translateY(-8px);
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px); /* Jemnější posun nahoru */
+    background: rgba(255, 255, 255, 0.12); /* Jemnější pozadí na hover */
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); /* Jemnější stín */
 }
 
-.card-icon {
-    font-size: 3rem;
-    margin-bottom: 20px;
-    display: block;
+.card-icon svg { /* Stylování SVG ikony uvnitř .card-icon */
+    width: 32px; /* Velikost ikon */
+    height: 32px;
+    color: #ffffff; /* Barva ikon */
+    margin-bottom: 15px; /* Mezera pod ikonou */
+    opacity: 0.9;
 }
 
 .card-title {
-    font-size: 1.5rem;
+    font-size: 1.4rem; /* Mírně menší nadpis karty */
     font-weight: 600;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     color: #ffffff;
 }
 
 .card-description {
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.6;
-    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7); /* Jemnější barva popisu */
+    line-height: 1.5;
+    font-size: 0.9rem; /* Mírně menší písmo popisu */
 }
 
-/* Special card colors */
+/* Speciální barvy karet (nyní jako akcenty na okraji pro minimalističtější vzhled) */
 .action-card.primary {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(147, 51, 234, 0.3));
-    border-color: rgba(59, 130, 246, 0.4);
+    border-left: 5px solid #6366F1; /* Modrý akcent */
 }
 
 .action-card.success {
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(59, 130, 246, 0.3));
-    border-color: rgba(34, 197, 94, 0.4);
+    border-left: 5px solid #22C55E; /* Zelený akcent */
 }
 
 .action-card.warning {
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 101, 101, 0.3));
-    border-color: rgba(251, 191, 36, 0.4);
+    border-left: 5px solid #F59E0B; /* Žlutý akcent */
 }
 
-/* Stats Section */
+
+/* Sekce statistik */
 .stats-section {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Mírně upravená velikost */
+    gap: 16px; /* Menší mezery */
     margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1); /* Jemný oddělovač */
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border-radius: 16px;
-    padding: 24px;
+    background: rgba(255, 255, 255, 0.05); /* Ještě jemnější pozadí */
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 20px; /* Menší polstrování */
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Jemnější ohraničení */
 }
 
 .stat-number {
-    font-size: 2rem;
+    font-size: 1.8rem; /* Menší velikost čísla */
     font-weight: 700;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: #ffffff;
 }
 
 .stat-label {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem; /* Menší písmo */
 }
 
-/* Footer */
+/* Patička */
 .footer {
     text-align: center;
-    margin-top: 60px;
+    margin-top: 50px; /* Mírně menší mezera */
     padding: 20px;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.6); /* Jemnější barva */
 }
 
-/* Responsive Design */
+/* Responzivní design */
 @media (max-width: 768px) {
     .container {
         padding: 20px 16px;
     }
     
     .header h1 {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
     }
     
     .cards-grid {
@@ -231,9 +224,12 @@ body {
     .search-input {
         padding: 16px 20px 16px 50px;
     }
+    .stats-section {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
 }
 
-/* Loading Animation */
+/* Animace načítání */
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
