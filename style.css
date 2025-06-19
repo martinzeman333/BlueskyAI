@@ -1,0 +1,208 @@
+/* Základní nastavení a import fontu */
+body {
+    background-color: #0a0c10;
+    color: #e6edf3;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-size: 16px;
+}
+
+/* Rámeček simulující mobilní telefon na desktopu */
+.mobile-frame {
+    background-color: #161b22;
+    padding: 12px;
+    border-radius: 40px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 2px #30363d;
+    overflow: hidden;
+}
+
+/* Obrazovka aplikace */
+.app-screen {
+    width: 375px;
+    height: 812px;
+    background-color: #0d1117;
+    border-radius: 28px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Efekt záře inspirovaný AI designem */
+.glow-effect {
+    position: absolute;
+    top: -150px;
+    left: -150px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(0, 122, 255, 0.3) 0%, rgba(0, 122, 255, 0) 60%);
+    z-index: 0;
+    animation: pulse 8s infinite alternate;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.8); opacity: 0.7; }
+    100% { transform: scale(1.2); opacity: 1; }
+}
+
+
+/* Hlavička aplikace */
+.app-header {
+    padding: 30px 20px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 2;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.app-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.header-icon svg {
+    width: 28px;
+    height: 28px;
+    fill: #8b949e;
+}
+
+/* Hlavní obsah */
+.app-content {
+    padding: 20px;
+    flex-grow: 1;
+    z-index: 1;
+}
+
+/* Pole pro vyhledávání */
+.search-container {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.search-box {
+    width: 100%;
+    padding: 14px 20px 14px 45px;
+    background-color: rgba(48, 54, 61, 0.5);
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    color: #e6edf3;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.search-box::placeholder {
+    color: #8b949e;
+}
+
+.search-box:focus {
+    outline: none;
+    border-color: #2f81f7;
+    box-shadow: 0 0 0 3px rgba(47, 129, 247, 0.3);
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    fill: #8b949e;
+}
+
+/* Mřížka s tlačítky */
+.button-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+
+/* Styl tlačítek */
+.action-button {
+    background-color: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.action-button:hover {
+    background-color: #30363d;
+    border-color: #8b949e;
+}
+
+.action-button:active {
+    transform: scale(0.98);
+}
+
+.button-icon {
+    font-size: 1.2rem;
+}
+
+/* Primární tlačítko */
+.action-button.primary {
+    background-color: #2f81f7;
+    color: #ffffff;
+    border-color: #2f81f7;
+    font-weight: 700;
+}
+
+.action-button.primary:hover {
+    background-color: #388bfd;
+}
+
+/* Speciální barvy pro Follow a Unfollow */
+.action-button.follow {
+    background-color: rgba(35, 134, 54, 0.2);
+    color: #3fb950;
+    border-color: rgba(35, 134, 54, 0.6);
+}
+.action-button.follow:hover {
+    background-color: rgba(35, 134, 54, 0.4);
+}
+
+.action-button.unfollow {
+    background-color: rgba(216, 39, 43, 0.15);
+    color: #f85149;
+    border-color: rgba(216, 39, 43, 0.5);
+}
+.action-button.unfollow:hover {
+    background-color: rgba(216, 39, 43, 0.3);
+}
+
+/* Responzivita pro mobilní telefony */
+@media (max-width: 480px) {
+    body {
+        align-items: flex-start;
+        background-color: #0d1117;
+    }
+    .mobile-frame {
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+        width: 100%;
+        height: 100vh;
+    }
+    .app-screen {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+    }
+}
