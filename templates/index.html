@@ -59,8 +59,8 @@
             <p class="card-description">Automaticky komentujte příspěvky s relevantními a vtipnými komentáři</p>
         </div>
 
-        <!-- AI Follow (pouze design, bez funkce) -->
-        <div class="action-card success">
+        <!-- AI Follow (Nyní s funkcí pro otevření nastavení) -->
+        <div class="action-card success" onclick="openFollowSettingsModal()">
             <span class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="19" y1="11" y2="11"/><line x1="19" x2="19" y1="8" y2="14"/></svg>
             </span>
@@ -113,8 +113,28 @@
     </footer>
 </div>
 
-<!-- Modální okna již nejsou potřeba, protože tlačítka nemají funkci -->
-<!-- Nicméně, pro budoucí znovupoužití je zde jejich struktura, ale display je none -->
+<!-- Modální okno pro nastavení AI Follow -->
+<div id="aiFollowSettingsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal('aiFollowSettingsModal')">&times;</span>
+        <h2>Nastavení AI Sledování</h2>
+        <div class="modal-form-group">
+            <label for="followRateInput">Sledovat lidí za hodinu:</label>
+            <input type="number" id="followRateInput" value="100" min="1" max="500" placeholder="Počet lidí za hodinu">
+        </div>
+        <div class="modal-form-group">
+            <label for="followKeywordInput">Klíčové slovo pro hledání:</label>
+            <input type="text" id="followKeywordInput" placeholder="Např. landscape photography">
+        </div>
+        <div class="modal-buttons-row">
+            <button class="modal-button primary-button" onclick="startAIFollow()">Spustit sledování</button>
+            <button class="modal-button danger-button" onclick="stopAIFollow()">Zastavit sledování</button>
+        </div>
+        <p id="aiFollowStatusMessage" class="status-message">Stav: Nespustěno</p>
+    </div>
+</div>
+
+<!-- Původní modální okna, nyní skrytá a bez funkcí (display:none) -->
 <div id="aiPostModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close-button" onclick="closeModal('aiPostModal')">&times;</span>
@@ -158,6 +178,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const isLoggedIn = {{ 'true' if is_logged_in else 'false' }};
     if (isLoggedIn) {
         fetchStats();
+        // Načíst stav AI Follow při načtení stránky
+        getAIFollowStatus(); // Přidáno pro načtení stavu AI Follow
     }
 });
 
@@ -193,6 +215,7 @@ async function loginToBluesky() {
             authForm.style.display = 'none';
             logoutForm.style.display = 'flex';
             fetchStats(); // Načíst statistiky po úspěšném přihlášení
+            getAIFollowStatus(); // Načíst stav AI Follow po přihlášení
         } else {
             showNotification(data.message, 'error');
         }
@@ -222,6 +245,7 @@ async function logoutFromBluesky() {
             passwordInput.value = ''; // Vymazat formulář
             // Reset statistik na N/A po odhlášení
             updateStats({ followers: 'N/A', following: 'N/A' }); 
+            updateAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A' }); // Reset AI Follow status
         } else {
             showNotification(data.message, 'error');
         }
@@ -257,13 +281,102 @@ function updateStats(stats) {
     document.getElementById('followingStat').textContent = stats.following.toLocaleString('cs-CZ');
 }
 
-// Funkce pro otevírání modálních oken jsou zakomentovány/prázdné, protože tlačítka nemají onClick
-function openModal(id) { /* V této verzi není aktivní */ }
-function closeModal(id) { /* V této verzi není aktivní */ }
-function openPostModal() { /* V této verzi není aktivní */ }
-function openCommentModal() { /* V této verzi není aktivní */ }
-function openFollowModal() { /* V této verzi není aktivní */ }
-function openUnfollowModal() { /* V této verzi není aktivní */ }
+// Funkce pro otevírání/zavírání modálních oken
+function openModal(id) {
+    document.getElementById(id).style.display = 'flex'; // Použijeme flex pro centrování
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+// Funkce specifická pro otevření nastavení AI Follow
+function openFollowSettingsModal() { 
+    openModal('aiFollowSettingsModal'); 
+    getAIFollowStatus(); // Načíst aktuální stav při otevření modalu
+}
+
+async function getAIFollowStatus() {
+    try {
+        const response = await fetch('/api/ai-follow-status');
+        const data = await response.json();
+        if (data.status === 'success') {
+            updateAIFollowStatus(data);
+        } else {
+            console.warn("Nelze načíst stav AI Follow: ", data.message);
+            updateAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A' }); // Reset status
+        }
+    } catch (error) {
+        console.error('Chyba při načítání stavu AI Follow:', error);
+        updateAIFollowStatus({ running: false, keyword: 'N/A', rate: 'N/A' }); // Reset status
+    }
+}
+
+function updateAIFollowStatus(statusData) {
+    const statusMessageElement = document.getElementById('aiFollowStatusMessage');
+    if (statusData.running) {
+        statusMessageElement.textContent = `Stav: Spuštěno (Klíčové slovo: ${statusData.keyword || 'N/A'}, Rychlost: ${statusData.rate || 'N/A'} lidí/hod, Fronta: ${statusData.queue_size || 0})`;
+        statusMessageElement.style.color = '#22C55E'; // Zelená
+    } else {
+        statusMessageElement.textContent = `Stav: Nespustěno`;
+        statusMessageElement.style.color = '#EF4444'; // Červená
+    }
+}
+
+async function startAIFollow() {
+    const rate = document.getElementById('followRateInput').value;
+    const keyword = document.getElementById('followKeywordInput').value;
+
+    if (!rate || !keyword) {
+        showNotification('Prosím zadejte rychlost a klíčové slovo pro AI Sledování.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/ai-follow-start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rate: parseInt(rate), keyword: keyword })
+        });
+        const data = await response.json();
+        showNotification(data.message, data.status);
+        if (data.status === 'success') {
+            getAIFollowStatus(); // Aktualizovat stav po spuštění
+            //closeModal('aiFollowSettingsModal'); // Modal nebudeme zavírat hned, aby uživatel viděl stav
+        }
+    } catch (error) {
+        console.error('Error starting AI Follow:', error);
+        showNotification('Nastala chyba při spouštění AI Sledování.', 'error');
+    }
+}
+
+async function stopAIFollow() {
+    try {
+        const response = await fetch('/api/ai-follow-stop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        showNotification(data.message, data.status);
+        if (data.status === 'success') {
+            getAIFollowStatus(); // Aktualizovat stav po zastavení
+            //closeModal('aiFollowSettingsModal'); // Modal nebudeme zavírat hned
+        }
+    } catch (error) {
+        console.error('Error stopping AI Follow:', error);
+        showNotification('Nastala chyba při zastavování AI Sledování.', 'error');
+    }
+}
+
+// Tyto funkce nyní nejsou přímo volány z tlačítek, ale zůstávají, pokud byste je chtěl v budoucnu aktivovat
+function openPostModal() { /* ... */ } 
+function sendPost() { /* ... */ }
+function openCommentModal() { /* ... */ }
+function sendComment() { /* ... */ }
+function openFollowModal() { /* ... */ }
+function sendFollow() { /* ... */ }
+function openUnfollowModal() { /* ... */ }
+function sendUnfollow() { /* ... */ }
 
 // Původní funkce pro odesílání API volání, nyní volaná pouze Analytics tlačítkem
 async function callAPI(endpoint, data = {}) {
