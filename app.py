@@ -4,16 +4,17 @@ from collections import deque
 import random # Importujeme pro randomizaci zpoždění
 from flask import Flask, render_template, request, jsonify, session
 import os
-# import atproto # Již nepotřebujeme pro zjištění verze
 from atproto import Client, models
-
-# Odstraněn debugging: Vypisování verze atproto. Způsobovalo AttributeError.
-# print(f"DEBUG: Načtená verze atproto: {atproto.__version__}")
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your_super_secret_key_please_change_this!')
 
 bluesky_client = Client()
+
+# --- Debugging: Kontrola atributů klienta po inicializaci ---
+print(f"DEBUG: Typ bluesky_client po inicializaci: {type(bluesky_client)}")
+print(f"DEBUG: Atributy bluesky_client po inicializaci: {dir(bluesky_client)}")
+# --- Konec debuggingu ---
 
 # --- Globální proměnné pro správu AI Follow procesu ---
 ai_follow_task_running = False
@@ -341,41 +342,33 @@ def search_follow_sources():
         return jsonify({"status": "error", "message": "Je potřeba zadat klíčové slovo pro vyhledávání."})
 
     try:
-        # PŘEPRAVENO: Používáme správnou metodu pro vyhledávání aktérů
-        # Bluesky API má limit 25 pro search_actors. Pro získání více je potřeba použít cursor a iterovat.
-        # Pro demonstraci budeme prozatím používat jeden dotaz s limitem 25.
+        # Volání search_actors se nyní nachází přímo pod bluesky_client.bsky.actor
         search_results = bluesky_client.bsky.actor.search_actors(q=keyword, limit=25)
         
         potential_users = []
         if search_results and search_results.actors:
             for actor in search_results.actors:
-                # Pro každého aktéra získáme detaily profilu pro počet sledujících
                 try:
                     profile_details = bluesky_client.get_profile(actor.did)
                     if profile_details:
                         potential_users.append({
                             "did": actor.did,
                             "handle": actor.handle,
-                            "followers_count": profile_details.followersCount # Počet sledujících
+                            "followers_count": profile_details.followersCount
                         })
                 except Exception as e:
                     print(f"Chyba při získávání profilu pro {actor.handle}: {e}")
-                    # Přeskočíme tohoto uživatele, pokud nelze získat profil
                     continue
         
-        # Seřadíme uživatele podle počtu sledujících sestupně
-        # Upozornění: Funkce sortování předpokládá, že 'followers_count' je číslo.
-        # Pokud by se nepodařilo získat, může být "N/A" což by způsobilo chybu.
-        # Zajistíme, aby byly nulové nebo nenumerické hodnoty na konci.
         potential_users_sorted = sorted(
             potential_users, 
-            key=lambda x: x['followers_count'] if isinstance(x['followers_count'], int) else -1, # -1 pro N/A
+            key=lambda x: x['followers_count'] if isinstance(x['followers_count'], int) else -1,
             reverse=True
         )
         
         return jsonify({
             "status": "success",
-            "users": potential_users_sorted[:50] # Vrátíme jen prvních 50 (i když z jednoho dotazu máme max 25)
+            "users": potential_users_sorted[:50]
         })
 
     except Exception as e:
@@ -400,7 +393,6 @@ def add_followers_to_queue():
     try:
         followers_list = []
         cursor = None
-        # Získáváme followers cílového uživatele
         while True:
             response = bluesky_client.get_followers(actor=target_user_did, limit=100, cursor=cursor)
             if response and response.followers:
@@ -414,10 +406,9 @@ def add_followers_to_queue():
         
         with ai_follow_lock:
             for follower_item in followers_list:
-                # Vyhnout se sledování sebe sama a uživatelů, které již sledujeme/zpracovali jsme
                 if follower_item.did != bluesky_client.me.did and follower_item.did not in processed_dids: 
                     ai_follow_queue.append(follower_item.did)
-                    processed_dids.add(follower_item.did) # Označit jako "viděný"
+                    processed_dids.add(follower_item.did) 
                     followers_added_count += 1
             
             current_ai_follow_activity = f"Přidáno {followers_added_count} sledujících z {target_user_did}. Celkem ve frontě: {len(ai_follow_queue)}"
