@@ -6,8 +6,8 @@
 }
 
 body {
-    /* Upravený gradient pro minimalistický vzhled */
-    background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
+    /* Upravený gradient pro minimalistický a tmavší vzhled inspirovaný obrázkem */
+    background: linear-gradient(135deg, #0D0D2B 0%, #2A004D 100%); /* Tmavší gradient */
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     min-height: 100vh;
     color: #ffffff;
@@ -68,21 +68,21 @@ body {
     font-size: 1.05rem;
     border: none;
     border-radius: 12px; /* Mírně menší zaoblení */
-    background: rgba(255, 255, 255, 0.1); /* Mírně průhlednější */
+    background: rgba(255, 255, 255, 0.08); /* Mírně průhlednější a tmavší pozadí */
     backdrop-filter: blur(15px); /* Menší blur */
     color: #ffffff;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.15); /* Jemnější ohraničení */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Jemnější ohraničení */
 }
 
 .search-input::placeholder {
-    color: rgba(255, 255, 255, 0.6); /* Jemnější placeholder text */
+    color: rgba(255, 255, 255, 0.5); /* Jemnější placeholder text */
 }
 
 .search-input:focus {
     outline: none;
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.12); /* Tmavší pozadí při focusu */
+    border-color: rgba(255, 255, 255, 0.2);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); /* Jemnější stín */
 }
 
@@ -93,7 +93,7 @@ body {
     transform: translateY(-50%);
     width: 24px;
     height: 24px;
-    fill: rgba(255, 255, 255, 0.6); /* Jemnější barva ikony */
+    fill: rgba(255, 255, 255, 0.5); /* Jemnější barva ikony */
 }
 
 /* Mřížka karet */
@@ -106,11 +106,11 @@ body {
 
 /* Akční karty */
 .action-card {
-    background: rgba(255, 255, 255, 0.08); /* Jemnější pozadí */
+    background: rgba(255, 255, 255, 0.05); /* Ještě jemnější pozadí */
     backdrop-filter: blur(15px); /* Menší blur */
     border-radius: 16px; /* Mírně menší zaoblení */
     padding: 28px; /* Upravené polstrování */
-    border: 1px solid rgba(255, 255, 255, 0.15); /* Jemnější ohraničení */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Jemnější ohraničení */
     transition: all 0.2s ease-out; /* Rychlejší a jemnější animace */
     cursor: pointer;
     position: relative;
@@ -123,8 +123,8 @@ body {
 /* Odebrán pseudoelement ::before pro jednodušší hover efekt */
 .action-card:hover {
     transform: translateY(-5px); /* Jemnější posun nahoru */
-    background: rgba(255, 255, 255, 0.12); /* Jemnější pozadí na hover */
-    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08); /* Jemnější pozadí na hover */
+    border-color: rgba(255, 255, 255, 0.15);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); /* Jemnější stín */
 }
 
@@ -133,7 +133,7 @@ body {
     height: 32px;
     color: #ffffff; /* Barva ikon */
     margin-bottom: 15px; /* Mezera pod ikonou */
-    opacity: 0.9;
+    opacity: 0.8; /* Mírně snížená průhlednost ikony */
 }
 
 .card-title {
@@ -144,7 +144,7 @@ body {
 }
 
 .card-description {
-    color: rgba(255, 255, 255, 0.7); /* Jemnější barva popisu */
+    color: rgba(255, 255, 255, 0.6); /* Jemnější barva popisu */
     line-height: 1.5;
     font-size: 0.9rem; /* Mírně menší písmo popisu */
 }
@@ -170,16 +170,16 @@ body {
     gap: 16px; /* Menší mezery */
     margin-top: 40px;
     padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1); /* Jemný oddělovač */
+    border-top: 1px solid rgba(255, 255, 255, 0.08); /* Jemný oddělovač */
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.05); /* Ještě jemnější pozadí */
+    background: rgba(255, 255, 255, 0.03); /* Ještě jemnější pozadí */
     backdrop-filter: blur(10px);
     border-radius: 12px;
     padding: 20px; /* Menší polstrování */
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1); /* Jemnější ohraničení */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Jemnější ohraničení */
 }
 
 .stat-number {
@@ -190,7 +190,7 @@ body {
 }
 
 .stat-label {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.6);
     font-size: 0.85rem; /* Menší písmo */
 }
 
@@ -199,7 +199,7 @@ body {
     text-align: center;
     margin-top: 50px; /* Mírně menší mezera */
     padding: 20px;
-    color: rgba(255, 255, 255, 0.6); /* Jemnější barva */
+    color: rgba(255, 255, 255, 0.5); /* Jemnější barva */
 }
 
 /* Responzivní design */
