@@ -21,7 +21,7 @@ body {
     min-height: 100vh;
 }
 
-/* Header */
+/* Header - Zde se styluje nadpis "Bluesky AI Manager" */
 .header {
     text-align: center;
     margin-bottom: 60px;
@@ -44,7 +44,7 @@ body {
     margin: 0 auto;
 }
 
-/* Search Section */
+/* Search Section - Styluje pole vyhledávání a jeho ikonu */
 .search-section {
     margin-bottom: 60px;
     display: flex;
@@ -91,7 +91,7 @@ body {
     fill: rgba(255, 255, 255, 0.7);
 }
 
-/* Cards Grid */
+/* Cards Grid - Rozložení pro tlačítka AI funkcí */
 .cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -99,7 +99,7 @@ body {
     margin-bottom: 40px;
 }
 
-/* Action Cards */
+/* Action Cards - Styl pro všechna AI tlačítka (AI Post, AI Like, AI Comment, AI Follow, AI Unfollow) */
 .action-card {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(20px);
