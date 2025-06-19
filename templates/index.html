@@ -121,17 +121,28 @@
     <div class="modal-content">
         <span class="close-button" onclick="closeModal('aiFollowSettingsModal')">&times;</span>
         <h2>Nastavení AI Sledování</h2>
+        
+        <div class="modal-form-group">
+            <label for="followKeywordInput">Klíčové slovo pro hledání zdrojových uživatelů:</label>
+            <input type="text" id="followKeywordInput" placeholder="Např. landscape photography">
+            <button class="modal-button" onclick="fetchPotentialFollowSources()">Vyhledat zdrojové uživatele</button>
+        </div>
+
+        <div id="followSourceResults" class="follow-source-results">
+            <!-- Zde se budou dynamicky vkládat výsledky vyhledávání -->
+            <p class="no-results-message" id="noFollowSourceResults">Zatím nebyly vyhledány žádné zdrojové profily.</p>
+        </div>
+
+        <div class="modal-divider"></div> <!-- Oddělovač -->
+
         <div class="modal-form-group">
             <label for="followRateInput">Sledovat lidí za hodinu:</label>
             <input type="number" id="followRateInput" value="100" min="1" max="500" placeholder="Počet lidí za hodinu">
         </div>
-        <div class="modal-form-group">
-            <label for="followKeywordInput">Klíčové slovo pro hledání:</label>
-            <input type="text" id="followKeywordInput" placeholder="Např. landscape photography">
-        </div>
+
         <div class="modal-buttons-row">
-            <button class="modal-button primary-button" onclick="startAIFollow()">Spustit sledování</button>
-            <button class="modal-button danger-button" onclick="stopAIFollow()">Zastavit sledování</button>
+            <button class="modal-button primary-button" id="startAIFollowBtn" onclick="startAIFollow()">Spustit sledování fronty</button>
+            <button class="modal-button danger-button" id="stopAIFollowBtn" onclick="stopAIFollow()">Zastavit sledování fronty</button>
         </div>
         <p id="aiFollowStatusMessage" class="status-message">Stav: Nespustěno</p>
     </div>
@@ -350,7 +361,7 @@ async function getAIFollowActivity() {
             // Optional: update color based on message content if needed
             if (data.message.includes("Spuštěno") || data.message.includes("Sleduji")) {
                 document.getElementById('aiFollowMainPageActivity').style.color = '#22C55E';
-            } else if (data.message.includes("Zastaveno") || data.message.includes("Nespustěno")) {
+            } else if (data.message.includes("Zastaveno") || data.message.includes("Nespustěno") || data.message.includes("Chyba")) { // Upraveno pro "Chyba"
                 document.getElementById('aiFollowMainPageActivity').style.color = '#EF4444';
             } else {
                  document.getElementById('aiFollowMainPageActivity').style.color = 'inherit';
@@ -400,20 +411,84 @@ function stopActivityPolling() {
     }
 }
 
-async function startAIFollow() {
-    const rate = document.getElementById('followRateInput').value;
-    const keyword = document.getElementById('followKeywordInput').value;
+// NOVÁ FUNKCE: Vyhledání zdrojových uživatelů
+async function fetchPotentialFollowSources() {
+    const keyword = document.getElementById('followKeywordInput').value.trim();
+    const resultsContainer = document.getElementById('followSourceResults');
+    resultsContainer.innerHTML = '<p class="loading-message">Vyhledávám...</p>'; // Zobrazit zprávu o načítání
 
-    if (!rate || !keyword) {
-        showNotification('Prosím zadejte rychlost a klíčové slovo pro AI Sledování.', 'error');
+    if (!keyword) {
+        showNotification('Prosím zadejte klíčové slovo pro vyhledání.', 'error');
+        resultsContainer.innerHTML = '<p class="no-results-message" id="noFollowSourceResults">Zadejte klíčové slovo pro vyhledání zdrojových profilů.</p>';
         return;
     }
 
     try {
-        const response = await fetch('/api/ai-follow-start', {
+        const response = await fetch(`/api/search-follow-sources?keyword=${encodeURIComponent(keyword)}`);
+        const data = await response.json();
+
+        if (data.status === 'success' && data.users && data.users.length > 0) {
+            resultsContainer.innerHTML = ''; // Vyčistit předchozí výsledky
+            data.users.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'follow-source-card';
+                userCard.innerHTML = `
+                    <div class="user-info">
+                        <strong>${user.handle}</strong>
+                        <span class="follower-count">(${user.followers_count} sledujících)</span>
+                    </div>
+                    <button class="modal-button small-button" onclick="addFollowersToQueue('${user.did}')">FF</button>
+                `;
+                resultsContainer.appendChild(userCard);
+            });
+            showNotification(`Nalezeno ${data.users.length} zdrojových uživatelů.`, 'success');
+        } else {
+            resultsContainer.innerHTML = '<p class="no-results-message">Žádné zdrojové profily nenalezeny pro dané klíčové slovo.</p>';
+            showNotification(data.message || 'Žádné zdrojové profily nenalezeny.', 'info');
+        }
+    } catch (error) {
+        console.error('Error fetching potential follow sources:', error);
+        resultsContainer.innerHTML = '<p class="no-results-message error-message">Chyba při vyhledávání zdrojových profilů.</p>';
+        showNotification('Chyba při vyhledávání zdrojových uživatelů.', 'error');
+    }
+}
+
+// NOVÁ FUNKCE: Přidání sledujících uživatele do fronty
+async function addFollowersToQueue(userDid) {
+    // Můžeme zobrazit nějaký loading stav nebo upozornění
+    showNotification('Přidávám sledující do fronty...', 'info');
+
+    try {
+        const response = await fetch('/api/add-followers-to-queue', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rate: parseInt(rate), keyword: keyword })
+            body: JSON.stringify({ target_user_did: userDid })
+        });
+        const data = await response.json();
+
+        showNotification(data.message, data.status);
+        getAIFollowStatusAndStartPolling(); // Aktualizovat stav fronty
+    } catch (error) {
+        console.error('Error adding followers to queue:', error);
+        showNotification('Chyba při přidávání sledujících do fronty.', 'error');
+    }
+}
+
+
+async function startAIFollow() {
+    const rate = document.getElementById('followRateInput').value;
+    const keyword = document.getElementById('followKeywordInput').value; // Klíčové slovo je nyní jen pro zobrazení, ale může být posíláno pro kontext
+
+    if (!rate || parseInt(rate) <= 0) {
+        showNotification('Prosím zadejte platnou kladnou rychlost sledování za hodinu.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/start-follow-processing', { // Změněno na nový endpoint
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rate: parseInt(rate), keyword: keyword }) // Posíláme i klíčové slovo pro zobrazení stavu
         });
         const data = await response.json();
         showNotification(data.message, data.status);
@@ -421,14 +496,14 @@ async function startAIFollow() {
             getAIFollowStatusAndStartPolling(); // Aktualizovat stav a spustit polling po spuštění
         }
     } catch (error) {
-        console.error('Error starting AI Follow:', error);
-        showNotification('Nastala chyba při spouštění AI Sledování.', 'error');
+        console.error('Error starting AI Follow processing:', error);
+        showNotification('Nastala chyba při spouštění zpracování AI Sledování.', 'error');
     }
 }
 
 async function stopAIFollow() {
     try {
-        const response = await fetch('/api/ai-follow-stop', {
+        const response = await fetch('/api/stop-follow-processing', { // Změněno na nový endpoint
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -438,8 +513,8 @@ async function stopAIFollow() {
             getAIFollowStatusAndStartPolling(); // Aktualizovat stav a zastavit polling po zastavení
         }
     } catch (error) {
-        console.error('Error stopping AI Follow:', error);
-        showNotification('Nastala chyba při zastavování AI Sledování.', 'error');
+        console.error('Error stopping AI Follow processing:', error);
+        showNotification('Nastala chyba při zastavování zpracování AI Sledování.', 'error');
     }
 }
 
@@ -453,7 +528,7 @@ function sendFollow() { /* ... */ }
 function openUnfollowModal() { /* ... */ }
 function sendUnfollow() { /* ... */ }
 
-// Původní funkce pro odesílání API volání, nyní volaná pouze Analytics tlačítkem
+// Původní funkce callAPI je nyní jen pro Analytics, protože ostatní mají dedikované funkce
 async function callAPI(endpoint, data = {}) {
     const card = event.currentTarget; 
     if (card) { 
@@ -461,12 +536,13 @@ async function callAPI(endpoint, data = {}) {
     }
     
     try {
+        // Pro Analytics by to měl být GET požadavek, ale pokud to je z callAPI, tak POST pro konzistenci
         const response = await fetch(`/api/${endpoint}`, {
-            method: 'POST', 
+            method: 'GET', // Změněno na GET pro fetchStats
             headers: {
                 'Content-Type': 'application/json',
-            },
-            body: Object.keys(data).length > 0 ? JSON.stringify(data) : null 
+            }
+            // body: Object.keys(data).length > 0 ? JSON.stringify(data) : null // GET request obvykle nemá body
         });
         const result = await response.json();
         
