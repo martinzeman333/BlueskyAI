@@ -16,45 +16,24 @@
         <p>Automatizujte své Bluesky aktivity pomocí umělé inteligence</p>
     </header>
 
+    <!-- Sekce pro přihlášení k Bluesky -->
+    <section class="auth-section">
+        <h2 class="auth-title">Přihlásit se k Bluesky</h2>
+        <p class="auth-status" id="authStatus">{{ 'Jste přihlášeni jako ' + user_handle if is_logged_in else 'Nejste přihlášeni' }}</p>
+        
+        <div class="auth-form" id="authForm" style="display: {{ 'none' if is_logged_in else 'flex' }};">
+            <input type="text" id="blueskyHandle" class="auth-input" placeholder="Váš Bluesky handle (např. jmeno.bsky.social)">
+            <input type="password" id="blueskyPassword" class="auth-input" placeholder="Vaše heslo">
+            <button class="auth-button" onclick="loginToBluesky()">Přihlásit se</button>
+        </div>
+        <div class="auth-form" id="logoutForm" style="display: {{ 'flex' if is_logged_in else 'none' }};">
+            <button class="auth-button logout" onclick="logoutFromBluesky()">Odhlásit se</button>
+        </div>
+    </section>
+
     <main class="cards-grid">
-        <!-- 2. Tlačítko: AI Follow (s novou SVG ikonou) -->
-        <div class="action-card success" onclick="callAPI('ai-follow')">
-            <span class="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="19" y1="11" y2="11"/><line x1="19" x2="19" y1="8" y2="14"/></svg>
-            </span>
-            <h3 class="card-title">AI Follow</h3>
-            <p class="card-description">Objevte a sledujte zajímavé účty na základě AI analýzy</p>
-        </div>
-
-        <!-- 3. Tlačítko: AI Unfollow (s novou SVG ikonou) -->
-        <div class="action-card warning" onclick="callAPI('ai-unfollow')">
-            <span class="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-minus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
-            </span>
-            <h3 class="card-title">AI Unfollow</h3>
-            <p class="card-description">Automaticky přestaňte sledovat neaktivní nebo nerelevantní účty</p>
-        </div>
-
-        <!-- 4. Tlačítko: AI Comment (s novou SVG ikonou) -->
-        <div class="action-card" onclick="callAPI('ai-comment')">
-            <span class="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </span>
-            <h3 class="card-title">AI Comment</h3>
-            <p class="card-description">Automaticky komentujte příspěvky s relevantními a vtipnými komentáři</p>
-        </div>
-
-        <!-- 5. Tlačítko: AI Like (s novou SVG ikonou) -->
-        <div class="action-card" onclick="callAPI('ai-like')">
-            <span class="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-            </span>
-            <h3 class="card-title">AI Like</h3>
-            <p class="card-description">Inteligentně lajkujte příspěvky na základě vašich preferencí</p>
-        </div>
-
-        <!-- 6. Tlačítko: AI Post (s novou SVG ikonou) -->
-        <div class="action-card primary" onclick="callAPI('ai-post')">
+        <!-- AI Post -->
+        <div class="action-card primary" onclick="openPostModal()">
             <span class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.9 10.8a6.3 6.3 0 0 0 8.242 8.242c.304-.304.593-.62.868-.949"/><path d="M14.242 12.001a6.3 6.3 0 0 0-8.242-8.242c-.304.304-.593.62-.868.949"/><path d="M19 14c-.97-2.03-2.43-3.5-4-4"/><path d="M5 10c.97 2.03 2.43 3.5 4 4"/></svg>
             </span>
@@ -62,7 +41,43 @@
             <p class="card-description">Automaticky generujte a publikujte chytré příspěvky na Bluesky pomocí AI</p>
         </div>
 
-        <div class="action-card">
+        <!-- AI Like (příklad s pevnou URI pro demonstraci) -->
+        <div class="action-card" onclick="callAPI('ai-like', {uri: 'at://example.com/post/abc123'})">
+            <span class="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </span>
+            <h3 class="card-title">AI Like</h3>
+            <p class="card-description">Inteligentně lajkujte příspěvky na základě vašich preferencí</p>
+        </div>
+
+        <!-- AI Comment (příklad s pevnou URI pro demonstraci) -->
+        <div class="action-card" onclick="openCommentModal()">
+            <span class="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            <h3 class="card-title">AI Comment</h3>
+            <p class="card-description">Automaticky komentujte příspěvky s relevantními a vtipnými komentáři</p>
+        </div>
+
+        <!-- AI Follow (příklad s pevnou handle pro demonstraci) -->
+        <div class="action-card success" onclick="openFollowModal()">
+            <span class="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="19" y1="11" y2="11"/><line x1="19" x2="19" y1="8" y2="14"/></svg>
+            </span>
+            <h3 class="card-title">AI Follow</h3>
+            <p class="card-description">Objevte a sledujte zajímavé účty na základě AI analýzy</p>
+        </div>
+
+        <!-- AI Unfollow (příklad s pevnou handle pro demonstraci) -->
+        <div class="action-card warning" onclick="openUnfollowModal()">
+            <span class="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-minus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+            </span>
+            <h3 class="card-title">AI Unfollow</h3>
+            <p class="card-description">Automaticky přestaňte sledovat neaktivní nebo nerelevantní účty</p>
+        </div>
+
+        <div class="action-card" onclick="fetchStats()">
             <span class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
             </span>
@@ -73,7 +88,6 @@
     
     <section class="search-section">
         <div class="search-container">
-            <!-- 7. Pole vyhledávání -->
             <input type="text" class="search-input" placeholder="Hledat funkce, nastavení...">
             <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
@@ -83,19 +97,19 @@
 
     <section class="stats-section">
         <div class="stat-card">
-            <div class="stat-number">1,234</div>
+            <div class="stat-number" id="aiPostsStat">N/A</div>
             <div class="stat-label">AI Posty</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">5,678</div>
+            <div class="stat-number" id="autoLikesStat">N/A</div>
             <div class="stat-label">Auto Liky</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">890</div>
+            <div class="stat-number" id="commentsStat">N/A</div>
             <div class="stat-label">Komentáře</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">456</div>
+            <div class="stat-number" id="newFollowsStat">N/A</div>
             <div class="stat-label">Nový Follow</div>
         </div>
     </section>
@@ -105,8 +119,189 @@
     </footer>
 </div>
 
+<!-- Modální okna pro AI akce -->
+<div id="aiPostModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal('aiPostModal')">&times;</span>
+        <h2>AI Post</h2>
+        <textarea id="postContent" placeholder="Zadejte text pro příspěvek (nebo nechte prázdné pro AI generaci)" rows="5"></textarea>
+        <button class="modal-button" onclick="sendPost()">Odeslat příspěvek</button>
+    </div>
+</div>
+
+<div id="aiCommentModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal('aiCommentModal')">&times;</span>
+        <h2>AI Komentář</h2>
+        <input type="text" id="commentUri" placeholder="URI příspěvku (např. at://...)">
+        <textarea id="commentContent" placeholder="Zadejte text komentáře" rows="3"></textarea>
+        <button class="modal-button" onclick="sendComment()">Odeslat komentář</button>
+    </div>
+</div>
+
+<div id="aiFollowModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal('aiFollowModal')">&times;</span>
+        <h2>AI Sledování</h2>
+        <input type="text" id="followHandle" placeholder="Handle uživatele k sledování (např. jmeno.bsky.social)">
+        <button class="modal-button" onclick="sendFollow()">Sledovat</button>
+    </div>
+</div>
+
+<div id="aiUnfollowModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal('aiUnfollowModal')">&times;</span>
+        <h2>AI Zrušení Sledování</h2>
+        <input type="text" id="unfollowHandle" placeholder="Handle uživatele k zrušení sledování">
+        <button class="modal-button" onclick="sendUnfollow()">Zrušit sledování</button>
+    </div>
+</div>
+
 <script>
-async function callAPI(endpoint) {
+document.addEventListener('DOMContentLoaded', (event) => {
+    // Načte statistiky při načtení stránky, pokud je uživatel přihlášen
+    const isLoggedIn = {{ 'true' if is_logged_in else 'false' }};
+    if (isLoggedIn) {
+        fetchStats();
+    }
+});
+
+async function loginToBluesky() {
+    const handleInput = document.getElementById('blueskyHandle');
+    const passwordInput = document.getElementById('blueskyPassword');
+    const authStatus = document.getElementById('authStatus');
+    const authForm = document.getElementById('authForm');
+    const logoutForm = document.getElementById('logoutForm');
+
+    const handle = handleInput.value;
+    const password = passwordInput.value;
+
+    if (!handle || !password) {
+        showNotification('Prosím zadejte obojí: handle a heslo.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/bluesky-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ handle, password })
+        });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            showNotification(data.message);
+            authStatus.textContent = `Jste přihlášeni jako ${data.handle}`;
+            authForm.style.display = 'none';
+            logoutForm.style.display = 'flex';
+            fetchStats(); // Načíst statistiky po úspěšném přihlášení
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Nastala chyba při přihlašování.', 'error');
+    }
+}
+
+async function logoutFromBluesky() {
+    const authStatus = document.getElementById('authStatus');
+    const authForm = document.getElementById('authForm');
+    const logoutForm = document.getElementById('logoutForm');
+    const handleInput = document.getElementById('blueskyHandle');
+    const passwordInput = document.getElementById('blueskyPassword');
+
+    try {
+        const response = await fetch('/api/bluesky-logout', { method: 'POST' });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            showNotification(data.message);
+            authStatus.textContent = 'Nejste přihlášeni';
+            authForm.style.display = 'flex';
+            logoutForm.style.display = 'none';
+            handleInput.value = ''; // Vymazat formulář
+            passwordInput.value = ''; // Vymazat formulář
+            updateStats({ ai_posts: 'N/A', auto_likes: 'N/A', comments: 'N/A', new_follows: 'N/A' }); // Reset statistik
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Nastala chyba při odhlašování.', 'error');
+    }
+}
+
+
+async function fetchStats() {
+    try {
+        const response = await fetch('/api/get-stats');
+        const data = await response.json();
+
+        if (data.status === 'success' && data.stats) {
+            updateStats(data.stats);
+        } else {
+            console.warn(data.message || "Nelze načíst statistiky.");
+            updateStats({ ai_posts: 'N/A', auto_likes: 'N/A', comments: 'N/A', new_follows: 'N/A' });
+        }
+    } catch (error) {
+        console.error('Error fetching stats:', error);
+        showNotification('Chyba při načítání statistik.', 'error');
+        updateStats({ ai_posts: 'N/A', auto_likes: 'N/A', comments: 'N/A', new_follows: 'N/A' });
+    }
+}
+
+function updateStats(stats) {
+    document.getElementById('aiPostsStat').textContent = stats.ai_posts.toLocaleString('cs-CZ');
+    document.getElementById('autoLikesStat').textContent = stats.auto_likes.toLocaleString('cs-CZ');
+    document.getElementById('commentsStat').textContent = stats.comments.toLocaleString('cs-CZ');
+    document.getElementById('newFollowsStat').textContent = stats.new_follows.toLocaleString('cs-CZ');
+}
+
+// Funkce pro otevření modálních oken
+function openModal(id) {
+    document.getElementById(id).style.display = 'block';
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+function openPostModal() { openModal('aiPostModal'); }
+function openCommentModal() { openModal('aiCommentModal'); }
+function openFollowModal() { openModal('aiFollowModal'); }
+function openUnfollowModal() { openModal('aiUnfollowModal'); }
+
+
+// Funkce pro odesílání dat z modálních oken
+async function sendPost() {
+    const postContent = document.getElementById('postContent').value;
+    closeModal('aiPostModal');
+    callAPI('ai-post', { content: postContent });
+}
+
+async function sendComment() {
+    const commentUri = document.getElementById('commentUri').value;
+    const commentContent = document.getElementById('commentContent').value;
+    closeModal('aiCommentModal');
+    callAPI('ai-comment', { uri: commentUri, comment: commentContent });
+}
+
+async function sendFollow() {
+    const followHandle = document.getElementById('followHandle').value;
+    closeModal('aiFollowModal');
+    callAPI('ai-follow', { handle: followHandle });
+}
+
+async function sendUnfollow() {
+    const unfollowHandle = document.getElementById('unfollowHandle').value;
+    closeModal('aiUnfollowModal');
+    callAPI('ai-unfollow', { handle: unfollowHandle });
+}
+
+
+async function callAPI(endpoint, data = {}) {
+    // Najdeme kartu, která volala API, abychom mohli přidat loading třídu
     const card = event.currentTarget;
     card.classList.add('loading');
     
@@ -115,12 +310,15 @@ async function callAPI(endpoint) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify(data) // Odešleme data
         });
-        const data = await response.json();
+        const result = await response.json();
         
-        // Simulace notifikace
-        showNotification(data.message);
+        showNotification(result.message, result.status);
+        if (result.status === 'success' && endpoint !== 'bluesky-logout') {
+            fetchStats(); // Aktualizovat statistiky po úspěšné akci
+        }
     } catch (error) {
         console.error('Error:', error);
         showNotification('Nastala chyba při volání API', 'error');
