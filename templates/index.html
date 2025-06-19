@@ -32,8 +32,8 @@
     </section>
 
     <main class="cards-grid">
-        <!-- AI Post -->
-        <div class="action-card primary" onclick="openPostModal()">
+        <!-- AI Post (pouze design, bez funkce) -->
+        <div class="action-card primary">
             <span class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.9 10.8a6.3 6.3 0 0 0 8.242 8.242c.304-.304.593-.62.868-.949"/><path d="M14.242 12.001a6.3 6.3 0 0 0-8.242-8.242c-.304.304-.593.62-.868.949"/><path d="M19 14c-.97-2.03-2.43-3.5-4-4"/><path d="M5 10c.97 2.03 2.43 3.5 4 4"/></svg>
             </span>
@@ -41,8 +41,8 @@
             <p class="card-description">Automaticky generujte a publikujte chytré příspěvky na Bluesky pomocí AI</p>
         </div>
 
-        <!-- AI Like (příklad s pevnou URI pro demonstraci) -->
-        <div class="action-card" onclick="callAPI('ai-like', {uri: 'at://example.com/post/abc123'})">
+        <!-- AI Like (pouze design, bez funkce) -->
+        <div class="action-card">
             <span class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             </span>
@@ -50,8 +50,8 @@
             <p class="card-description">Inteligentně lajkujte příspěvky na základě vašich preferencí</p>
         </div>
 
-        <!-- AI Comment (příklad s pevnou URI pro demonstraci) -->
-        <div class="action-card" onclick="openCommentModal()">
+        <!-- AI Comment (pouze design, bez funkce) -->
+        <div class="action-card">
             <span class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </span>
@@ -59,8 +59,8 @@
             <p class="card-description">Automaticky komentujte příspěvky s relevantními a vtipnými komentáři</p>
         </div>
 
-        <!-- AI Follow (příklad s pevnou handle pro demonstraci) -->
-        <div class="action-card success" onclick="openFollowModal()">
+        <!-- AI Follow (pouze design, bez funkce) -->
+        <div class="action-card success">
             <span class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="19" y1="11" y2="11"/><line x1="19" x2="19" y1="8" y2="14"/></svg>
             </span>
@@ -68,8 +68,8 @@
             <p class="card-description">Objevte a sledujte zajímavé účty na základě AI analýzy</p>
         </div>
 
-        <!-- AI Unfollow (příklad s pevnou handle pro demonstraci) -->
-        <div class="action-card warning" onclick="openUnfollowModal()">
+        <!-- AI Unfollow (pouze design, bez funkce) -->
+        <div class="action-card warning">
             <span class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-minus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
             </span>
@@ -77,6 +77,7 @@
             <p class="card-description">Automaticky přestaňte sledovat neaktivní nebo nerelevantní účty</p>
         </div>
 
+        <!-- Analytics (tlačítko pro načtení statistik) -->
         <div class="action-card" onclick="fetchStats()">
             <span class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
@@ -99,11 +100,11 @@
     <section class="stats-section">
         <div class="stat-card">
             <div class="stat-number" id="followersStat">N/A</div>
-            <div class="stat-label">Počet mých followerů</div>
+            <div class="stat-label">Sledují tě</div>
         </div>
         <div class="stat-card">
             <div class="stat-number" id="followingStat">N/A</div>
-            <div class="stat-label">Počet lidí, které sleduji já</div>
+            <div class="stat-label">Sleduješ</div>
         </div>
     </section>
 
@@ -112,8 +113,9 @@
     </footer>
 </div>
 
-<!-- Modální okna pro AI akce -->
-<div id="aiPostModal" class="modal">
+<!-- Modální okna již nejsou potřeba, protože tlačítka nemají funkci -->
+<!-- Nicméně, pro budoucí znovupoužití je zde jejich struktura, ale display je none -->
+<div id="aiPostModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close-button" onclick="closeModal('aiPostModal')">&times;</span>
         <h2>AI Post</h2>
@@ -122,7 +124,7 @@
     </div>
 </div>
 
-<div id="aiCommentModal" class="modal">
+<div id="aiCommentModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close-button" onclick="closeModal('aiCommentModal')">&times;</span>
         <h2>AI Komentář</h2>
@@ -132,7 +134,7 @@
     </div>
 </div>
 
-<div id="aiFollowModal" class="modal">
+<div id="aiFollowModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close-button" onclick="closeModal('aiFollowModal')">&times;</span>
         <h2>AI Sledování</h2>
@@ -141,7 +143,7 @@
     </div>
 </div>
 
-<div id="aiUnfollowModal" class="modal">
+<div id="aiUnfollowModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close-button" onclick="closeModal('aiUnfollowModal')">&times;</span>
         <h2>AI Zrušení Sledování</h2>
@@ -252,72 +254,44 @@ function updateStats(stats) {
     document.getElementById('followingStat').textContent = stats.following.toLocaleString('cs-CZ');
 }
 
-// Funkce pro otevření modálních oken
+// Funkce pro otevření modálních oken (nyní již nepoužívané, ale zůstávají)
 function openModal(id) {
-    document.getElementById(id).style.display = 'block';
+    // document.getElementById(id).style.display = 'block';
 }
 
 function closeModal(id) {
-    document.getElementById(id).style.display = 'none';
+    // document.getElementById(id).style.display = 'none';
 }
 
-function openPostModal() { openModal('aiPostModal'); }
-function openCommentModal() { openModal('aiCommentModal'); }
-function openFollowModal() { openModal('aiFollowModal'); }
-function openUnfollowModal() { openModal('aiUnfollowModal'); }
-
-
-// Funkce pro odesílání dat z modálních oken
-async function sendPost() {
-    const postContent = document.getElementById('postContent').value;
-    closeModal('aiPostModal');
-    callAPI('ai-post', { content: postContent });
-}
-
-async function sendComment() {
-    const commentUri = document.getElementById('commentUri').value;
-    const commentContent = document.getElementById('commentContent').value;
-    closeModal('aiCommentModal');
-    callAPI('ai-comment', { uri: commentUri, comment: commentContent });
-}
-
-async function sendFollow() {
-    const followHandle = document.getElementById('followHandle').value;
-    closeModal('aiFollowModal');
-    callAPI('ai-follow', { handle: followHandle });
-}
-
-async function sendUnfollow() {
-    const unfollowHandle = document.getElementById('unfollowHandle').value;
-    closeModal('aiUnfollowModal');
-    callAPI('ai-unfollow', { handle: unfollowHandle });
-}
-
-
+// Původní funkce pro odesílání API volání, nyní bez využití pro AI akční tlačítka
 async function callAPI(endpoint, data = {}) {
-    // Najdeme kartu, která volala API, abychom mohli přidat loading třídu
-    const card = event.currentTarget;
-    card.classList.add('loading');
+    // Tuto funkci nyní volá pouze tlačítko Analytics
+    const card = event.currentTarget; // Toto by mělo být tlačítko Analytics
+    if (card) { // Zkontrolujeme, zda karta existuje
+        card.classList.add('loading');
+    }
     
     try {
         const response = await fetch(`/api/${endpoint}`, {
-            method: 'POST',
+            method: 'POST', // I když pro Analytics je to GET, zachováváme pro budoucí flexibilitu
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(data) // Odešleme data
+            body: Object.keys(data).length > 0 ? JSON.stringify(data) : null // Odešleme data, pokud existují
         });
         const result = await response.json();
         
         showNotification(result.message, result.status);
         if (result.status === 'success' && endpoint !== 'bluesky-logout') {
-            fetchStats(); // Aktualizovat statistiky po úspěšné akci
+            fetchStats(); // Aktualizovat statistiky po úspěšné akci (pokud to má smysl)
         }
     } catch (error) {
         console.error('Error:', error);
         showNotification('Nastala chyba při volání API', 'error');
     } finally {
-        card.classList.remove('loading');
+        if (card) { // Zkontrolujeme, zda karta existuje
+            card.classList.remove('loading');
+        }
     }
 }
 
