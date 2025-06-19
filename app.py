@@ -414,12 +414,14 @@ def _run_ai_follow_task():
                 search_actors_response = bluesky_client.search_actors(q=ai_follow_keyword, limit=20) 
                 
                 if search_actors_response and search_actors_response.actors:
+                    print(f"(DEBUG) search_actors našel {len(search_actors_response.actors)} aktérů.")
                     suitable_user_did = None
                     for actor in search_actors_response.actors:
                         if actor.did not in searched_user_dids:
                             suitable_user_did = actor.did
                             with ai_follow_lock:
                                 searched_user_dids.add(actor.did) 
+                            print(f"(DEBUG) Vybrán vhodný uživatel: {actor.handle} ({actor.did})")
                             break
 
                     if suitable_user_did:
@@ -433,6 +435,7 @@ def _run_ai_follow_task():
                             try:
                                 resp = bluesky_client.get_followers(actor=suitable_user_did, limit=100, cursor=followers_cursor)
                                 if resp and resp.followers:
+                                    print(f"(DEBUG) Načteno {len(resp.followers)} sledujících pro {suitable_user_did}. Další cursor: {resp.cursor}")
                                     for follower_item in resp.followers:
                                         if follower_item.did not in processed_dids:
                                             with ai_follow_lock:
@@ -440,8 +443,10 @@ def _run_ai_follow_task():
                                                 processed_dids.add(follower_item.did) 
                                     followers_cursor = resp.cursor
                                 else:
+                                    print(f"(DEBUG) get_followers pro {suitable_user_did} vrátil prázdný výsledek nebo chybí followers.")
                                     break
                                 if not followers_cursor:
+                                    print(f"(DEBUG) Pro {suitable_user_did} již není další cursor.")
                                     break
                             except Exception as e_inner:
                                 print(f"AI Follow Thread: Chyba při načítání sledujících pro {suitable_user_did}: {e_inner}")
