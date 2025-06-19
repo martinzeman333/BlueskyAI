@@ -399,10 +399,6 @@ body {
     .stats-section {
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     }
-    .modal-content {
-        width: 90%;
-        padding: 20px;
-    }
 }
 
 /* Animace načítání */
