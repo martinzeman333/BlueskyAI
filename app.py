@@ -31,6 +31,11 @@ def bluesky_login():
     # --- Debugging: Vypíšeme přijaté údaje do logů ---
     # Tento výpis je zde kvůli diagnostice problému s přihlášením.
     # Umožňuje nám vidět přesně, jaký handle a délka hesla dorazí na server.
+    # Zde také provedeme strip() pro odstranění bílých znaků (včetně neviditelných)
+    # na začátku a konci handle a password.
+    handle = handle.strip() if handle else None
+    password = password.strip() if password else None
+    
     print(f"Přihlašovací pokus: Handle '{handle}', Délka hesla: {len(password) if password else 0}")
     # Neuvádíme celé heslo do logů z bezpečnostních důvodů!
     # --- Konec debuggingu ---
