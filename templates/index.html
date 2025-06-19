@@ -95,22 +95,15 @@
         </div>
     </section>
 
+    <!-- Sekce statistik aktualizovaná pro zobrazení followerů a sledovaných -->
     <section class="stats-section">
         <div class="stat-card">
-            <div class="stat-number" id="aiPostsStat">N/A</div>
-            <div class="stat-label">AI Posty</div>
+            <div class="stat-number" id="followersStat">N/A</div>
+            <div class="stat-label">Počet mých followerů</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number" id="autoLikesStat">N/A</div>
-            <div class="stat-label">Auto Liky</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" id="commentsStat">N/A</div>
-            <div class="stat-label">Komentáře</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" id="newFollowsStat">N/A</div>
-            <div class="stat-label">Nový Follow</div>
+            <div class="stat-number" id="followingStat">N/A</div>
+            <div class="stat-label">Počet lidí, které sleduji já</div>
         </div>
     </section>
 
@@ -222,7 +215,8 @@ async function logoutFromBluesky() {
             logoutForm.style.display = 'none';
             handleInput.value = ''; // Vymazat formulář
             passwordInput.value = ''; // Vymazat formulář
-            updateStats({ ai_posts: 'N/A', auto_likes: 'N/A', comments: 'N/A', new_follows: 'N/A' }); // Reset statistik
+            // Reset statistik na N/A po odhlášení
+            updateStats({ followers: 'N/A', following: 'N/A' }); 
         } else {
             showNotification(data.message, 'error');
         }
@@ -242,20 +236,20 @@ async function fetchStats() {
             updateStats(data.stats);
         } else {
             console.warn(data.message || "Nelze načíst statistiky.");
-            updateStats({ ai_posts: 'N/A', auto_likes: 'N/A', comments: 'N/A', new_follows: 'N/A' });
+            // Zajistěte resetování statistik na N/A, pokud se nepodaří načíst
+            updateStats({ followers: 'N/A', following: 'N/A' });
         }
     } catch (error) {
         console.error('Error fetching stats:', error);
         showNotification('Chyba při načítání statistik.', 'error');
-        updateStats({ ai_posts: 'N/A', auto_likes: 'N/A', comments: 'N/A', new_follows: 'N/A' });
+        // Zajistěte resetování statistik na N/A v případě chyby
+        updateStats({ followers: 'N/A', following: 'N/A' });
     }
 }
 
 function updateStats(stats) {
-    document.getElementById('aiPostsStat').textContent = stats.ai_posts.toLocaleString('cs-CZ');
-    document.getElementById('autoLikesStat').textContent = stats.auto_likes.toLocaleString('cs-CZ');
-    document.getElementById('commentsStat').textContent = stats.comments.toLocaleString('cs-CZ');
-    document.getElementById('newFollowsStat').textContent = stats.new_follows.toLocaleString('cs-CZ');
+    document.getElementById('followersStat').textContent = stats.followers.toLocaleString('cs-CZ');
+    document.getElementById('followingStat').textContent = stats.following.toLocaleString('cs-CZ');
 }
 
 // Funkce pro otevření modálních oken
