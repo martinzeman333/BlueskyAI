@@ -1,6 +1,7 @@
 import time
 import threading
 from collections import deque
+import random # Importujeme pro randomizaci zpoždění
 from flask import Flask, render_template, request, jsonify, session
 import os
 from atproto import Client, models
@@ -11,9 +12,6 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your_super_secret_key_pleas
 bluesky_client = Client()
 
 # --- Globální proměnné pro správu AI Follow procesu ---
-# Tyto proměnné uchovávají stav pozadí úlohy AI Follow.
-# V produkčním prostředí by toto mělo být nahrazeno robustnějším systémem (např. Celery, RQ s databází),
-# aby se zajistila perzistence stavu a odolnost proti pádům aplikace.
 ai_follow_task_running = False
 ai_follow_keyword = None
 ai_follow_rate = None # lidé za hodinu
@@ -23,10 +21,9 @@ last_follow_time = 0 # Čas posledního follow, pro řízení rychlosti
 
 # Zde budeme sledovat již navštívené DID, abychom se vyhnuli opakovanému zpracování
 # a také uživatele, které již sledujeme, nebo které jsme se pokusili sledovat.
-# Mělo by být persistováno do databáze pro produkční použití.
-processed_dids = set()
+processed_dids = set() # DIDs, které jsme již zpracovali (follow/přeskočili)
+current_ai_follow_activity = "Nespustěno" # Zpráva pro frontend o aktuální aktivitě
 
-# Lock pro bezpečný přístup ke globálním proměnným z více vláken
 ai_follow_lock = threading.Lock()
 # --- Konec globálních proměnných ---
 
@@ -70,14 +67,13 @@ def bluesky_login():
 
 @app.route('/api/bluesky-logout', methods=['POST'])
 def bluesky_logout():
-    global ai_follow_task_running, ai_follow_thread
+    global ai_follow_task_running, ai_follow_thread, current_ai_follow_activity
     with ai_follow_lock:
         if ai_follow_task_running:
             ai_follow_task_running = False
             if ai_follow_thread and ai_follow_thread.is_alive():
-                # Dáme vláknu čas na dokončení nebo zjištění, že má skončit
-                # V produkci byste použili robustnější mechanismus pro graceful shutdown
                 ai_follow_thread.join(timeout=5)
+            current_ai_follow_activity = "Nespustěno (odhlášeno)" # Aktualizovat aktivitu
     try:
         bluesky_client.logout()
         return jsonify({"status": "success", "message": "Odhlášeno z Bluesky."})
@@ -262,7 +258,7 @@ def ai_follow_status():
 @app.route('/api/ai-follow-start', methods=['POST'])
 def ai_follow_start():
     """Spustí AI Follow proces."""
-    global ai_follow_task_running, ai_follow_keyword, ai_follow_rate, ai_follow_thread, ai_follow_queue, processed_dids
+    global ai_follow_task_running, ai_follow_keyword, ai_follow_rate, ai_follow_thread, ai_follow_queue, processed_dids, current_ai_follow_activity
     
     if not is_bluesky_logged_in():
         return jsonify({"status": "error", "message": "Pro spuštění AI Sledování je nutné být přihlášen."})
@@ -285,7 +281,19 @@ def ai_follow_start():
         ai_follow_rate = rate
         ai_follow_queue.clear() # Vyprázdníme frontu pro nový start
         processed_dids.clear() # Resetujeme sledované DID (pro účely nové "run")
+        current_ai_follow_activity = f"Spuštěno s klíčovým slovem '{keyword}' a rychlostí {rate} lidí/hod."
         
+        # Získáme DID aktuálně sledovaných uživatelů, abychom je nepřidávali do processed_dids
+        # a vyhnuli se pokusu o followání již sledovaných.
+        try:
+            my_follows_response = bluesky_client.get_follows(actor=bluesky_client.me.did)
+            for f in my_follows_response.follows:
+                processed_dids.add(f.did)
+            print(f"AI Follow Thread: Přednačteno {len(processed_dids)} již sledovaných uživatelů.")
+        except Exception as e:
+            print(f"AI Follow Thread: Chyba při přednačítání sledovaných uživatelů: {e}")
+            current_ai_follow_activity = f"Chyba při přednačítání sledovaných uživatelů: {e}"
+
         # Spustíme vlákno pro pozadí úlohu
         ai_follow_thread = threading.Thread(target=_run_ai_follow_task)
         ai_follow_thread.daemon = True # Povolí ukončení vlákna s hlavní aplikací
@@ -296,7 +304,7 @@ def ai_follow_start():
 @app.route('/api/ai-follow-stop', methods=['POST'])
 def ai_follow_stop():
     """Zastaví AI Follow proces."""
-    global ai_follow_task_running, ai_follow_thread
+    global ai_follow_task_running, ai_follow_thread, current_ai_follow_activity
     with ai_follow_lock:
         if not ai_follow_task_running:
             return jsonify({"status": "info", "message": "AI Sledování již neběží."})
@@ -308,8 +316,19 @@ def ai_follow_stop():
             if ai_follow_thread.is_alive():
                 print("Upozornění: AI Follow vlákno se nepodařilo ukončit včas.")
         ai_follow_thread = None # Resetujeme referenci na vlákno
+        current_ai_follow_activity = "Zastaveno" # Aktualizovat aktivitu
 
     return jsonify({"status": "success", "message": "AI Sledování bylo zastaveno."})
+
+@app.route('/api/ai-follow-activity', methods=['GET'])
+def ai_follow_activity():
+    """Vrací aktuální zprávu o aktivitě AI Follow."""
+    with ai_follow_lock:
+        return jsonify({
+            "status": "success",
+            "message": current_ai_follow_activity
+        })
+
 
 def _run_ai_follow_task():
     """
@@ -317,110 +336,108 @@ def _run_ai_follow_task():
     Tato funkce běží v samostatném vlákně a řídí proces vyhledávání a sledování.
     Vyhledává uživatele podle klíčového slova a poté sleduje jejich followers.
     """
-    global ai_follow_task_running, ai_follow_keyword, ai_follow_rate, ai_follow_queue, last_follow_time, processed_dids
+    global ai_follow_task_running, ai_follow_keyword, ai_follow_rate, ai_follow_queue, last_follow_time, processed_dids, current_ai_follow_activity
     
     print(f"AI Follow Thread: Spuštěno s klíčovým slovem '{ai_follow_keyword}' a rychlostí {ai_follow_rate} lidí/hod.")
 
     # Čas mezi jednotlivými follow operacemi (v sekundách)
-    # 3600 sekund v hodině / počet follow za hodinu
     seconds_per_follow = 3600 / ai_follow_rate if ai_follow_rate > 0 else 0
-    min_follow_delay = seconds_per_follow # Základní zpoždění mezi follow
+    
+    # Rozsah náhodné variace (např. +/- 20%)
+    random_variation_percent = 0.2 
 
     # Abychom nepřetížili API Bluesky, nastavíme minimální zpoždění pro vyhledávání nových uživatelů
-    # Bude hledat nové vhodné uživatele, jejichž followers bude následovat.
     search_user_delay = 60 # Hledáme nového uživatele pro získání followers každých 60 sekund (nebo když je fronta prázdná)
     last_search_user_time = 0
     
     # Uložíme si DID uživatelů, jejichž followery jsme již prohledali, abychom se neopakovali
     searched_user_dids = set()
 
-    # Získáme DID aktuálně sledovaných uživatelů, abychom je nepřidávali do processed_dids
-    # a vyhnuli se pokusu o followání již sledovaných.
-    try:
-        my_follows_response = bluesky_client.get_follows(actor=bluesky_client.me.did)
-        for f in my_follows_response.follows:
-            processed_dids.add(f.did)
-        print(f"AI Follow Thread: Přednačteno {len(processed_dids)} již sledovaných uživatelů.")
-    except Exception as e:
-        print(f"AI Follow Thread: Chyba při přednačítání sledovaných uživatelů: {e}")
-
     while True:
         with ai_follow_lock:
             if not ai_follow_task_running:
                 print("AI Follow Thread: Zastavování úlohy.")
-                break # Ukončíme smyčku a vlákno
+                current_ai_follow_activity = "Zastaveno"
+                break 
 
         current_time = time.time()
 
         # Krok 1: Pokus o následování uživatele z fronty
         if ai_follow_queue:
-            if current_time - last_follow_time >= min_follow_delay:
+            # Vypočítáme randomizované zpoždění pro tento konkrétní follow
+            delay_factor = 1 + random.uniform(-random_variation_percent, random_variation_percent)
+            current_follow_delay = seconds_per_follow * delay_factor
+
+            if current_time - last_follow_time >= current_follow_delay:
                 with ai_follow_lock:
-                    target_did = ai_follow_queue.popleft() # Vezmeme prvního z fronty
+                    if not ai_follow_queue: # Zkontrolovat znovu, pokud se mezitím fronta vyprázdnila
+                        continue
+                    target_did = ai_follow_queue.popleft() 
                 
                 # Zkontrolovat, zda již tento DID nesledujeme nebo jsme ho nedávno zpracovali
                 if target_did in processed_dids:
                     print(f"AI Follow Thread: DID {target_did} již zpracován/sledován, přeskočeno. (zbývá ve frontě: {len(ai_follow_queue)})")
-                    continue # Jít na další iteraci, dokud nenajdeme nového uživatele k follow
+                    with ai_follow_lock:
+                        current_ai_follow_activity = f"Přeskakuji již zpracovaného DID. Fronta: {len(ai_follow_queue)}"
+                    continue 
                 
+                with ai_follow_lock:
+                    current_ai_follow_activity = f"Sleduji uživatele: {target_did} (zbývá: {len(ai_follow_queue)})"
                 print(f"AI Follow Thread: Pokus o následování DID: {target_did} (zbývá ve frontě: {len(ai_follow_queue)})")
                 
                 try:
                     bluesky_client.follow(target_did)
                     print(f"AI Follow Thread: Úspěšně následován DID: {target_did}")
                     with ai_follow_lock:
-                        processed_dids.add(target_did) # Přidat do seznamu zpracovaných
+                        processed_dids.add(target_did)
+                        current_ai_follow_activity = f"Úspěšně následován: {target_did} (fronta: {len(ai_follow_queue)})"
                     last_follow_time = time.time()
                 except Exception as e:
-                    # Chyby mohou nastat kvůli již sledovanému uživateli, rate limitu, neplatnému DID atd.
                     print(f"AI Follow Thread: Chyba při následování DID {target_did}: {e}")
                     with ai_follow_lock:
                         processed_dids.add(target_did) # Označit jako zpracované, aby se ho znovu nepokoušel následovat
-
+                        current_ai_follow_activity = f"Chyba při následování: {target_did} ({e}). Fronta: {len(ai_follow_queue)}"
+                
             else:
-                # Pokud není čas na další follow, spíme a čekáme
-                time_to_wait = min_follow_delay - (current_time - last_follow_time)
+                time_to_wait = current_follow_delay - (current_time - last_follow_time)
                 # print(f"AI Follow Thread: Čekám na další follow: {time_to_wait:.2f}s")
-                time.sleep(time_to_wait + 0.1) # Přidáme malou rezervu
-                continue # Pokračujeme k další iteraci smyčky
-
+                time.sleep(time_to_wait + 0.1) 
+                continue 
+        
         # Krok 2: Pokud je fronta prázdná NEBO je čas na nové vyhledávání vhodných uživatelů
         if (not ai_follow_queue) or (current_time - last_search_user_time >= search_user_delay):
+            with ai_follow_lock:
+                current_ai_follow_activity = f"Hledám nové uživatele s klíčovým slovem '{ai_follow_keyword}'..."
             print(f"AI Follow Thread: Fronta prázdná nebo čas na hledání nového vhodného uživatele pro followery. Hledám '{ai_follow_keyword}'...")
             
             try:
-                # Hledání profilů/uživatelů podle klíčového slova
-                # Limitujeme na menší počet, abychom našli relevantní uživatele rychleji a nespouštěli příliš mnoho API volání.
                 search_actors_response = bluesky_client.search_actors(q=ai_follow_keyword, limit=20) 
                 
                 if search_actors_response and search_actors_response.actors:
                     suitable_user_did = None
                     for actor in search_actors_response.actors:
-                        # Zde můžete přidat sofistikovanější logiku pro výběr "nejvhodnějšího" uživatele,
-                        # např. podle počtu followers, popisu profilu atd.
-                        # Prozatím vybereme prvního, který ještě nebyl prohledán.
                         if actor.did not in searched_user_dids:
                             suitable_user_did = actor.did
                             with ai_follow_lock:
-                                searched_user_dids.add(actor.did) # Označit jako prohledaného
+                                searched_user_dids.add(actor.did) 
                             break
 
                     if suitable_user_did:
                         print(f"AI Follow Thread: Nalezen vhodný uživatel pro prohledání followerů: {suitable_user_did}")
-                        # Získání sledujících tohoto vhodného uživatele
+                        with ai_follow_lock:
+                            current_ai_follow_activity = f"Získávám sledující uživatele: {suitable_user_did}..."
+                        
                         followers_of_suitable_user = []
                         followers_cursor = None
                         while True:
                             try:
-                                # Získání followers cílového uživatele (omezený limit pro jedno volání)
                                 resp = bluesky_client.get_followers(actor=suitable_user_did, limit=100, cursor=followers_cursor)
                                 if resp and resp.followers:
                                     for follower_item in resp.followers:
-                                        # Přidáme do fronty pouze, pokud jsme ho ještě nezpracovali (a nesledujeme ho)
                                         if follower_item.did not in processed_dids:
                                             with ai_follow_lock:
                                                 ai_follow_queue.append(follower_item.did)
-                                                processed_dids.add(follower_item.did) # Označit jako "viděný"
+                                                processed_dids.add(follower_item.did) 
                                     followers_cursor = resp.cursor
                                 else:
                                     break
@@ -428,16 +445,26 @@ def _run_ai_follow_task():
                                     break
                             except Exception as e_inner:
                                 print(f"AI Follow Thread: Chyba při načítání sledujících pro {suitable_user_did}: {e_inner}")
-                                break # Přerušit načítání followers pro tohoto uživatele
+                                with ai_follow_lock:
+                                    current_ai_follow_activity = f"Chyba při získávání sledujících pro {suitable_user_did}: {e_inner}"
+                                break 
 
                         print(f"AI Follow Thread: Přidáno {len(ai_follow_queue)} nových uživatelů do fronty z followerů {suitable_user_did}. Celková fronta: {len(ai_follow_queue)}")
+                        with ai_follow_lock:
+                            current_ai_follow_activity = f"Fronta doplněna. Nová fronta: {len(ai_follow_queue)}"
                     else:
                         print(f"AI Follow Thread: Nenašel se žádný nový vhodný uživatel podle klíčového slova '{ai_follow_keyword}'.")
+                        with ai_follow_lock:
+                            current_ai_follow_activity = f"Žádný nový vhodný uživatel s klíčovým slovem '{ai_follow_keyword}' nenalezen."
                 else:
                     print(f"AI Follow Thread: Žádné profily s klíčovým slovem '{ai_follow_keyword}' nenalezeny.")
+                    with ai_follow_lock:
+                        current_ai_follow_activity = f"Žádné profily s klíčovým slovem '{ai_follow_keyword}' nenalezeny."
             
             except Exception as e:
                 print(f"AI Follow Thread: Chyba při vyhledávání vhodných uživatelů: {e}")
+                with ai_follow_lock:
+                    current_ai_follow_activity = f"Chyba při vyhledávání vhodných uživatelů: {e}"
             
             last_search_user_time = time.time()
         
