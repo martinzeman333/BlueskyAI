@@ -28,10 +28,8 @@ def bluesky_login():
     handle = data.get('handle')
     password = data.get('password')
 
-    # --- Debugging: Vypíšeme přijaté údaje do logů ---
-    print(f"Přihlašovací pokus: Handle '{handle}', Délka hesla: {len(password) if password else 0}")
-    # Neuvádíme celé heslo do logů z bezpečnostních důvodů!
-    # --- Konec debuggingu ---
+    # Odstranění ladicího výpisu pro handle a heslo
+    # print(f"Přihlašovací pokus: Handle '{handle}', Délka hesla: {len(password) if password else 0}")
 
     if not handle or not password:
         return jsonify({"status": "error", "message": "Prosím, zadejte Bluesky handle a heslo."})
