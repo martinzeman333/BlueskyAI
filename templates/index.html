@@ -13,55 +13,45 @@
 <body>
 <div class="container">
     <header class="header">
-        <!-- Hlavní nadpis "Bluesky AI Manager" -->
+        <!-- 1. Nadpis "Bluesky AI Manager" -->
         <h1>Bluesky AI Manager</h1>
         <p>Automatizujte své Bluesky aktivity pomocí umělé inteligence</p>
     </header>
 
-    <section class="search-section">
-        <div class="search-container">
-            <!-- Pole vyhledávání -->
-            <input type="text" class="search-input" placeholder="Hledat funkce, nastavení...">
-            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-            </svg>
-        </div>
-    </section>
-
     <main class="cards-grid">
-        <!-- Tlačítko: AI Post -->
-        <div class="action-card primary" onclick="callAPI('ai-post')">
-            <span class="card-icon">🚀</span>
-            <h3 class="card-title">AI Post</h3>
-            <p class="card-description">Automaticky generujte a publikujte chytré příspěvky na Bluesky pomocí AI</p>
-        </div>
-
-        <!-- Tlačítko: AI Like -->
-        <div class="action-card" onclick="callAPI('ai-like')">
-            <span class="card-icon">👍</span>
-            <h3 class="card-title">AI Like</h3>
-            <p class="card-description">Inteligentně lajkujte příspěvky na základě vašich preferencí</p>
-        </div>
-
-        <!-- Tlačítko: AI Comment -->
-        <div class="action-card" onclick="callAPI('ai-comment')">
-            <span class="card-icon">💬</span>
-            <h3 class="card-title">AI Comment</h3>
-            <p class="card-description">Automaticky komentujte příspěvky s relevantními a vtipnými komentáři</p>
-        </div>
-
-        <!-- Tlačítko: AI Follow -->
+        <!-- 2. Tlačítko: AI Follow -->
         <div class="action-card success" onclick="callAPI('ai-follow')">
             <span class="card-icon">➕</span>
             <h3 class="card-title">AI Follow</h3>
             <p class="card-description">Objevte a sledujte zajímavé účty na základě AI analýzy</p>
         </div>
 
-        <!-- Tlačítko: AI Unfollow -->
+        <!-- 3. Tlačítko: AI Unfollow -->
         <div class="action-card warning" onclick="callAPI('ai-unfollow')">
             <span class="card-icon">➖</span>
             <h3 class="card-title">AI Unfollow</h3>
             <p class="card-description">Automaticky přestaňte sledovat neaktivní nebo nerelevantní účty</p>
+        </div>
+
+        <!-- 4. Tlačítko: AI Comment -->
+        <div class="action-card" onclick="callAPI('ai-comment')">
+            <span class="card-icon">💬</span>
+            <h3 class="card-title">AI Comment</h3>
+            <p class="card-description">Automaticky komentujte příspěvky s relevantními a vtipnými komentáři</p>
+        </div>
+
+        <!-- 5. Tlačítko: AI Like -->
+        <div class="action-card" onclick="callAPI('ai-like')">
+            <span class="card-icon">👍</span>
+            <h3 class="card-title">AI Like</h3>
+            <p class="card-description">Inteligentně lajkujte příspěvky na základě vašich preferencí</p>
+        </div>
+
+        <!-- 6. Tlačítko: AI Post -->
+        <div class="action-card primary" onclick="callAPI('ai-post')">
+            <span class="card-icon">🚀</span>
+            <h3 class="card-title">AI Post</h3>
+            <p class="card-description">Automaticky generujte a publikujte chytré příspěvky na Bluesky pomocí AI</p>
         </div>
 
         <div class="action-card">
@@ -70,6 +60,16 @@
             <p class="card-description">Sledujte výkonnost vašich příspěvků a růst followers</p>
         </div>
     </main>
+    
+    <section class="search-section">
+        <div class="search-container">
+            <!-- 7. Pole vyhledávání -->
+            <input type="text" class="search-input" placeholder="Hledat funkce, nastavení...">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+        </div>
+    </section>
 
     <section class="stats-section">
         <div class="stat-card">
